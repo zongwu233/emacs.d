@@ -11,7 +11,7 @@
 (require 'init-completion)
 (require 'init-awesome-tab)
 (require 'init-search)
-(require 'init-theme)
+(require 'init-ui)
 (require 'init-org)
 
 
