@@ -10,19 +10,19 @@
   (setq company-idle-delay 0))
 
 ;;增强 minibuffer 补全
-(package-install 'vertico)
+(use-package vertico :ensure	t)
 (vertico-mode t)
 
 ;;在 minibuffer 支持模糊搜索
-(package-install 'orderless)
+(use-package orderless :ensure t)
 (setq completion-styles '(orderless))
 
 ;; 增强 minibuffer 的annotation
-(package-install 'marginalia)
+(use-package marginalia :ensure t)
 (marginalia-mode t)
 
 ;; minibuffer action 就类似于在任何内容上右键点击
-(package-install 'embark)
+(use-package embark :ensure t)
 (global-set-key (kbd "C-;") 'embark-act)
 ;;利用这个 可以不用再记忆快捷键，只需要执行 C-x C-h 呼出帮助命令
 ;;然后输入想执行命令的关键字，既可以出现提示列表，又因为 orderless
@@ -30,9 +30,9 @@
 (setq prefix-help-command 'embark-prefix-help-command)
 
 ;;增强文件内搜索和跳转函数定义
-(package-install 'consult)
+(use-package consult :ensure t)
 ;;同时使用需要这个
-(package-install 'embark-consult)
+(use-package embark-consult :ensure t)
 ;;强大的文件内搜索功能，完全替代了 swiper 插件
 (global-set-key (kbd "C-s") 'consult-line)
 ;;文件内函数跳转

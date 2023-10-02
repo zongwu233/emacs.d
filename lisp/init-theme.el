@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t -*-
 ;; install theme
-(package-install 'gruvbox-theme)
+(use-package gruvbox-theme :ensure t)
 (load-theme 'gruvbox-light-soft t)
 
 (provide 'init-theme)

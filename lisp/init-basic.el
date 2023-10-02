@@ -40,7 +40,7 @@
 ;;最近打开文件
 (require 'recentf)
 (recentf-mode 1)
-(setq recentf-max-menu-item 10)
+(setq recentf-max-menu-item 8)
 (global-set-key (kbd "C-x b") 'consult-buffer)
 
 (delete-selection-mode 1)
@@ -61,6 +61,24 @@
 (setq inhibit-splash-screen t)
 
 (setq initial-scratch-message ";; Happy Hacking")
+
+;;内置 package
+;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了
+(use-package savehist
+  :hook (after-init . savehist-mode)
+  :init (setq enable-recursive-minibuffers t ; Allow commands in minibuffers
+	    history-length 1000
+	    savehist-additional-variables '(mark-ring
+					    global-mark-ring
+					    search-ring
+					    regexp-search-ring
+					    extended-command-history)
+	    savehist-autosave-interval 300)
+)
+
+;;内置package
+(use-package saveplace
+  :hook (after-init . save-place-mode))
 
 
 (provide 'init-basic)

@@ -1,5 +1,5 @@
-(package-install 'embark-consult)
-(package-install 'wgrep)
+(use-package embark-consult :ensure t)
+(use-package wgrep :ensure t)
 (setq wgrep-auto-save-buffer t)
 
 (eval-after-load
