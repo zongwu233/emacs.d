@@ -1,3 +1,12 @@
+;;安装最新版本 org 不使用内置版本
+(use-package org
+  :pin gnu
+  :ensure t)
+
+(use-package org-contrib
+  :pin nongnu
+  :ensure t)
+
 (require 'org-tempo)  ;开启easy template
 
 ;; 需要开启 electric-pair-mode
