@@ -1,5 +1,6 @@
 (require 'org-tempo)  ;开启easy template
 
+;; 需要开启 electric-pair-mode
 ;; 禁用左尖括号
 (setq electric-pair-inhibit-predicate
       `(lambda (c)

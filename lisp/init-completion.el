@@ -1,4 +1,30 @@
-;; -*- lexical-binding: t -*-
+(package-install 'company)
+(global-company-mode 1)
+
+;; company mode 默认选择上一条和下一条候选项命令 M-n M-p
+(define-key company-active-map (kbd "C-n") 'company-select-next)
+(define-key company-active-map (kbd "C-p") 'company-select-previous)
+
+;;增强 minibuffer 补全
+(package-install 'vertico)
+(vertico-mode t)
+
+;;在 minibuffer 支持模糊搜索
+(package-install 'orderless)
+(setq completion-styles '(orderless))
+
+;; 增强 minibuffer 的annotation
+(package-install 'marginalia)
+(marginalia-mode t)
+
+;; minibuffer action 就类似于在任何内容上右键点击
+(package-install 'embark)
+(global-set-key (kbd "C-;") 'embark-act)
+;;利用这个 可以不用再记忆快捷键，只需要执行 C-x C-h 呼出帮助命令
+;;然后输入想执行命令的关键字，既可以出现提示列表，又因为 orderless
+;; 可以不用在意关键字单词的顺序 最后直接回车执行即可
+(setq prefix-help-command 'embark-prefix-help-command)
+
 ;;增强文件内搜索和跳转函数定义
 (package-install 'consult)
 ;;同时使用需要这个
@@ -44,5 +70,4 @@
 
 
 
-
-(provide 'init-consult)
+(provide 'init-completion)
