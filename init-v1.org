@@ -128,6 +128,19 @@ C-h f 寻找函数的帮助信息
   ;;文件内函数跳转
   ;;consult-imenu
 
+  ;; consult 默认配置优化
+  (eval-after-load 'consult
+  (progn
+    (setq
+     consult-narrow-key "<"
+     consult-line-numbers-widen t
+     consult-async-min-input 2
+     consult-async-refresh-delay  0.15
+     consult-async-input-throttle 0.2
+     consult-async-input-debounce 0.1)
+    ))
+
+
   ;;括号匹配
   (show-paren-mode t)
 
@@ -181,7 +194,7 @@ C-h f 寻找函数的帮助信息
 ** as a super front-end
 
 使用 Emacs 打开文件管理器
-
+M-x consult-directory-externally 然后输入文件目录，既可以用系统文件浏览器打开该目录
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/init.el
 
   (defun consult-directory-externally (file)
@@ -211,3 +224,57 @@ C-h f 寻找函数的帮助信息
 增强 consult 和 embark ，强大的文件夹内搜索大杀器
 使用 consult-ripgrep 命令可以调用 ripgrep 搜索目标目录。
 
+consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一个候选列表。
+这时候按 C-c C-e 调用 embark-export-write 函数，将候选列表写入一下可写 buffer，
+这时候再按 M-x query-replace-regexp 则可以交互式替换文本内容。 按 y 则执行替换，按 n 跳过
+最后 C-x C-s 保存所有替换结果。
+这个功能可以替换 ivy 插件。
+
+
+#+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/init.el
+
+  (package-install 'embark-consult)
+  (package-install 'wgrep)
+  (setq wgrep-auto-save-buffer t)
+
+  (eval-after-load
+      'consult
+    '(eval-after-load
+	 'embark
+       '(progn
+	  (require 'embark-consult)
+	  (add-hook
+	   'embark-collect-mode-hook
+	   #'consult-preview-at-point-mode))))
+
+  (defun embark-export-write ()
+  "Export the current vertico results to a writable buffer if possible.
+  Supports exporting consult-grep to wgrep, file to wdeired, and consult-location to occur-edit"
+  (interactive)
+  (require 'embark)
+  (require 'wgrep)
+  (pcase-let ((`(,type . ,candidates)
+	       (run-hook-with-args-until-success 'embark-candidate-collectors)))
+    (pcase type
+      ('consult-grep (let ((embark-after-export-hook #'wgrep-change-to-wgrep-mode))
+		       (embark-export)))
+      ('file (let ((embark-after-export-hook #'wdired-change-to-wdired-mode))
+	       (embark-export)))
+      ('consult-location (let ((embark-after-export-hook #'occur-edit-mode))
+			   (embark-export)))
+      (x (user-error "embark category %S doesn't support writable export" x)))))
+
+  (define-key minibuffer-local-map (kbd "C-c C-e") 'embark-export-write)
+
+  ;;高亮当前行
+  (global-hl-line-mode 1)
+
+  ;; install theme
+  (package-install 'gruvbox-theme)
+  (load-theme 'gruvbox-light-soft t)
+
+
+#+END_SRC
+
+在 org mode 下，可以开启 org-tempo。然后输入 <s 按tab 键就可以自动补全 源码模式的配置。
+在里面按 C-c ' 就开启一个 minibuffer ，是一个支持语法高亮的输入环境。
