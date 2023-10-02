@@ -4,6 +4,7 @@
 ;;(setq debug-on-error t)
 
 (add-to-list 'load-path "~/.emacs.d/lisp/")
+(require 'init-begin)
 (require 'init-package)
 (require 'init-keybinding)
 (require 'init-basic)

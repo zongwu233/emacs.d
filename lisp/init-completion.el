@@ -1,9 +1,13 @@
-(package-install 'company)
-(global-company-mode 1)
-
-;; company mode 默认选择上一条和下一条候选项命令 M-n M-p
-(define-key company-active-map (kbd "C-n") 'company-select-next)
-(define-key company-active-map (kbd "C-p") 'company-select-previous)
+(use-package company
+  :ensure t
+  :bind (:map company-active-map
+	      ("C-n" . 'company-select-next)
+	      ("C-p" . 'company-select-previous))
+  :init
+  (global-company-mode t)
+  :config
+  (setq company-minimum-prefix-length 1)
+  (setq company-idle-delay 0))
 
 ;;增强 minibuffer 补全
 (package-install 'vertico)
