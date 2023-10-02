@@ -28,8 +28,11 @@
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 (setq mouse-wheel-progressive-speed nil)
 
-;;括号匹配
+;;括号匹配高亮
 (show-paren-mode t)
+;;自动补全成对的符号
+(electric-pair-mode 1)
+
 
 ;;禁止自动生成备份文件
 (setq make-backup-files nil)

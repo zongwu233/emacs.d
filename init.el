@@ -16,3 +16,4 @@
 (require 'init-awesome-tab)
 (require 'init-search)
 (require 'init-theme)
+(require 'init-org)
