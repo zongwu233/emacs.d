@@ -48,6 +48,19 @@
 ;;高亮当前行
 (global-hl-line-mode 1)
 
+;; 自动加载在外部修改的文件
+(global-auto-revert-mode 1)
+
+;; close auto save
+(setq auto-save-default nil)
+;;关闭错误的时候哔哔的警告声音
+(setq ring-bell-function 'ignore)
+;; simple to y or n
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(setq inhibit-splash-screen t)
+
+(setq initial-scratch-message ";; Happy Hacking")
 
 
 (provide 'init-basic)

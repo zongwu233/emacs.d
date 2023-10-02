@@ -8,6 +8,8 @@
 (when (not package-archive-contents)
   (package-refresh-contents))
 
+(package-install 'use-package)
+
 ;;添加本地目录插件
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
 
