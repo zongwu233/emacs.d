@@ -13,6 +13,7 @@
 (require 'init-search)
 (require 'init-ui)
 (require 'init-org)
+(require 'init-evil)
 
 
 (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))
