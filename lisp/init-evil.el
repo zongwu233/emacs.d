@@ -46,7 +46,7 @@
   (setq undo-tree-auto-save-history nil)
   (evil-set-undo-system 'undo-tree))
 
-;;文本搜索 在 minibuffer 显示总数以及当前 index
+;;文本搜索  doom modeline 会显示结果总数以及当前 index
 (use-package evil-anzu
 :ensure t
 :after evil
@@ -90,7 +90,7 @@
   (evil-snipe-mode +1)
   (evil-snipe-override-mode +1))
 
-;; 跳转到匹配的符号，比如 () {} 甚至 begin end
+;; 按 % 跳转到匹配的符号，比如 () {} 甚至 begin end
 (use-package evil-matchit
   :ensure
   :init
