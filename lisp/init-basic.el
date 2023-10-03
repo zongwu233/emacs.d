@@ -59,8 +59,7 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 
 (setq inhibit-splash-screen t)
-
-(setq initial-scratch-message ";; Happy Hacking")
+(setq initial-scratch-message ";; Happy Hacking! Emacs loves you!")
 
 ;;内置 package
 ;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了
