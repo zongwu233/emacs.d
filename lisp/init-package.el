@@ -3,8 +3,8 @@
 			 ("melpa" . "https://mirrors.163.com/elpa/melpa/")))
 ;; add nongnu resource
 (add-to-list 'package-archives
-	    (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
-				   (if (gnutls-available-p) "s" ""))))
+	     (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
+				    (if (gnutls-available-p) "s" ""))))
 
 (package-initialize)
 
@@ -12,7 +12,23 @@
 (when (not package-archive-contents)
   (package-refresh-contents))
 
-;;; 这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
+(use-package quelpa
+  :ensure t
+)
+
+(unless (package-installed-p 'quelpa-use-package)
+  (quelpa
+   '(quelpa-use-package
+     :fetcher git
+     :url "https://github.com/quelpa/quelpa-use-package.git")))
+
+(use-package quelpa-use-package
+  :init
+  (setq quelpa-use-package-inhibit-loading-quelpa t)
+  :demand t)
+
+
+  ;;; 这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
 (assq-delete-all 'org package--builtins)
 (assq-delete-all 'org package--builtin-versions)
 
