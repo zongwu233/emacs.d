@@ -13,6 +13,10 @@
 (use-package vertico :ensure	t)
 (vertico-mode t)
 
+;; make c-j/c-k work in vertico selection
+(define-key vertico-map (kbd "C-j") 'vertico-next)
+(define-key vertico-map (kbd "C-k") 'vertico-previous)
+
 ;;在 minibuffer 支持模糊搜索
 (use-package orderless :ensure t)
 (setq completion-styles '(orderless))
