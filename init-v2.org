@@ -19,6 +19,7 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
   (require 'init-ui)
   (require 'init-org)
   (require 'init-evil)
+  (require 'init-text-manipulation)
 
 
   (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))
@@ -40,39 +41,55 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 *** init-packages.el package 相关配置
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-package.el
 
-  (require 'package)
-  (setq package-archives '(("gnu"   . "https://mirrors.163.com/elpa/gnu/")
-			   ("melpa" . "https://mirrors.163.com/elpa/melpa/")))
-  ;; add nongnu resource
-  (add-to-list 'package-archives
-	      (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
-				     (if (gnutls-available-p) "s" ""))))
+    (require 'package)
+    (setq package-archives '(("gnu"   . "https://mirrors.163.com/elpa/gnu/")
+			     ("melpa" . "https://mirrors.163.com/elpa/melpa/")))
+    ;; add nongnu resource
+    (add-to-list 'package-archives
+		 (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
+					(if (gnutls-available-p) "s" ""))))
 
-  (package-initialize)
+    (package-initialize)
 
-  ;;防止反复调用 package-refresh-contents 会影响加载速度
-  (when (not package-archive-contents)
-    (package-refresh-contents))
+    ;;防止反复调用 package-refresh-contents 会影响加载速度
+    (when (not package-archive-contents)
+      (package-refresh-contents))
 
-  ;;; 这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
-  (assq-delete-all 'org package--builtins)
-  (assq-delete-all 'org package--builtin-versions)
+    (use-package quelpa
+      :ensure t
+    )
 
+    (unless (package-installed-p 'quelpa-use-package)
+      (quelpa
+       '(quelpa-use-package
+	 :fetcher git
+	 :url "https://github.com/quelpa/quelpa-use-package.git")))
 
-  ;; Setup `use-package'
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-
-  ;; 重启命令
-  (use-package restart-emacs
-    :ensure t)
-
-  ;;添加本地目录插件
-  (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
+    (use-package quelpa-use-package
+      :init
+      (setq quelpa-use-package-inhibit-loading-quelpa t)
+      :demand t)
 
 
-  (provide 'init-package)
+      ;;; 这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
+    (assq-delete-all 'org package--builtins)
+    (assq-delete-all 'org package--builtin-versions)
+
+
+    ;; Setup `use-package'
+    (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
+      (package-install 'use-package))
+
+    ;; 重启命令
+    (use-package restart-emacs
+      :ensure t)
+
+    ;;添加本地目录插件
+    (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
+
+
+    (provide 'init-package)
 #+END_SRC
 
 *** init-keybinding.el
@@ -663,6 +680,111 @@ visual state
 motion state 对只读 buffer 的一种模式。只能 motion 不能修改。
 replace state 与 insert state 类似，除了是 replace 而不是 insert 。
 operator-pending state
+*** init-text-manipulation.el
+强大的文本区域选择
+而且支持将选择之后的文本，传输给其他命令，比如 搜索，高亮，替换 等等。
+#+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-text-manipulation.el
+    (defun my/search-project-for-symbol-at-point ()
+    (interactive)
+    (if (use-region-p)
+	(progn
+	  (consult-ripgrep (project-root (project-current))
+			   (buffer-substring (region-beginning) (region-end))))))
 
+    (defun my/evil-quick-replace (beg end )
+    (interactive "r")
+    (when (evil-visual-state-p)
+      (evil-exit-visual-state)
+      (let ((selection (regexp-quote (buffer-substring-no-properties beg end))))
+	(setq command-string (format "%%s /%s//g" selection))
+	(minibuffer-with-setup-hook
+	    (lambda () (backward-char 2))
+	  (evil-ex command-string)))))
+
+    (define-key evil-visual-state-map (kbd "C-r") 'my/evil-quick-replace)
+
+
+    (use-package expand-region
+    :ensure t
+    :bind ("C-=" . er/expand-region)
+    :config
+    (defadvice er/prepare-for-more-expansions-internal
+	(around helm-ag/prepare-for-more-expansions-internal activate)
+      ad-do-it
+      (let ((new-msg (concat (car ad-return-value)
+			     ", H to highlight in buffers"
+			     ", / to search in project, "
+			     "e iedit mode in functions, "
+			     "f to search in files, "
+			     "b to search in opened buffers"))
+	    (new-bindings (cdr ad-return-value)))
+	(cl-pushnew
+	 '("H" (lambda ()
+		 (interactive)
+		 (call-interactively
+		  'my/highlight-dwim)))
+	 new-bindings)
+	(cl-pushnew
+	 '("/" (lambda ()
+		 (interactive)
+		 (call-interactively
+		  'my/search-project-for-symbol-at-point)))
+	 new-bindings)
+	(cl-pushnew
+	 '("e" (lambda ()
+		 (interactive)
+		 (call-interactively
+		  'evil-multiedit-match-all)))
+	 new-bindings)
+	(cl-pushnew
+	 '("f" (lambda ()
+		 (interactive)
+		 (call-interactively
+		  'find-file)))
+	 new-bindings)
+	(cl-pushnew
+	 '("b" (lambda ()
+		 (interactive)
+		 (call-interactively
+		  'consult-line)))
+	 new-bindings)
+	(setq ad-return-value (cons new-msg new-bindings)))))
+
+
+    (defun my/highlight-dwim ()
+    (interactive)
+    (if (use-region-p)
+	(progn
+	  (highlight-frame-toggle)
+	  (deactivate-mark))
+      (symbol-overlay-put)))
+
+  
+
+  (use-package symbol-overlay
+    :ensure t
+    :config
+    (define-key symbol-overlay-map (kbd "h") 'nil))
+
+  (use-package highlight-global
+    :ensure nil
+    :commands (highlight-frame-toggle)
+    :quelpa (highlight-global :fetcher github :repo "glen-dai/highlight-global")
+    :config
+    (progn
+      (setq-default highlight-faces
+		    '(('hi-red-b . 0)
+		      ('hi-aquamarine . 0)
+		      ('hi-pink . 0)
+		      ('hi-blue-b . 0)))))
+  (defun my/clear-highlight ()
+    (interactive)
+    (clear-highlight-frame) ;; highlight-global function
+    (symbol-overlay-remove-all))
+
+
+  (provide 'init-text-manipulation)
+
+#+end_src
 
 

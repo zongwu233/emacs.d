@@ -14,6 +14,7 @@
 (require 'init-ui)
 (require 'init-org)
 (require 'init-evil)
+(require 'init-text-manipulation)
 
 
 (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))
