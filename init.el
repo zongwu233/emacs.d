@@ -19,6 +19,7 @@
 (require 'init-text-manipulation)
 (require 'init-programming-basic)
 (require 'init-window)
+(require 'init-tabs)
 
 
 (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))

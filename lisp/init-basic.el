@@ -28,6 +28,9 @@
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
 (setq mouse-wheel-progressive-speed nil)
 
+;; orgmode 进行文学编程的时候， < 会匹配 ) 导致影响匹配的高亮提示
+;; 参见 https://www.reddit.com/r/orgmode/comments/s869jc/matching_parentheses_in_orgmode/
+;; 可以使用 org-edit-special 在 minibuffer 里面进行 code 的校验
 ;;括号匹配高亮
 (show-paren-mode t)
 ;;自动补全成对的符号
