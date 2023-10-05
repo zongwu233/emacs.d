@@ -35,5 +35,32 @@
 (setq org-agenda-files '("~/org/gtd.org"))
 (setq org-agenda-span 'day)
 
+;; see https://github.com/abo-abo/org-download/issues/131
+(use-package org-download
+:ensure t
+:after org
+:config
+(setq-default
+ org-download-image-dir "~/org/images"
+ ;; Basename setting seems to be simply ignored.
+ org-download-screenshot-basename ".png"
+ org-download-timestamp "org_%Y%m%d-%H%M%S_"
+ org-image-actual-width 960
+ org-download-heading-lvl nil)
+:custom
+(org-download-screenshot-method
+ (cond
+  ((eq system-type 'gnu/linux)
+   "xclip -selection clipboard -t image/png -o > '%s'")
+  ((eq system-type 'darwin)
+   "pngpaste %s")))
+:bind
+(:map org-mode-map
+      (("C-M-y" . org-download-screenshot)
+       ("s-y" . org-download-yank))))  
+
+;; Drag-and-drop to `dired`
+(add-hook 'dired-mode-hook 'org-download-enable)
+
 
 (provide 'init-org)
