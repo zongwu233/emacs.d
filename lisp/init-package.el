@@ -42,8 +42,6 @@
 (use-package restart-emacs
   :ensure t)
 
-;;添加本地目录插件
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
 
 
 (provide 'init-package)

@@ -1,3 +1,6 @@
+;;添加本地目录插件
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
+
 ;; 使用本地文件安装的 package
 (require 'awesome-tab)
 (awesome-tab-mode t)

@@ -9,7 +9,9 @@
 (require 'init-keybinding)
 (require 'init-basic)
 (require 'init-completion)
-(require 'init-awesome-tab)
+;;使用内置的 tab-bar 在 init-window 配置 
+;(require 'init-awesome-tab)
+
 (require 'init-search)
 (require 'init-ui)
 (require 'init-org)
