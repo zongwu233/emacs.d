@@ -15,6 +15,8 @@
 (require 'init-org)
 (require 'init-evil)
 (require 'init-text-manipulation)
+(require 'init-programming-basic)
+(require 'init-window)
 
 
 (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))
