@@ -8,7 +8,8 @@
   (defun awesome-tab-buffer-groups ()
     "`awesome-tab-buffer-groups' control buffers' group rules.
 
-  Group awesome-tab with mode if buffer is derived from `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
+  Group awesome-tab with mode if buffer is derived from
+    `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
   All buffer name start with * will group to \"Emacs\".
   Other buffer group by `awesome-tab-get-group-name' with project name."
     (list
