@@ -7,7 +7,7 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
   ;; -*- coding: utf-8; lexical-binding: t; -*-
 
   ;; open for debug error when you need.
-  (setq debug-on-error t)
+  ;;(setq debug-on-error t)
 
   (add-to-list 'load-path "~/.emacs.d/lisp/")
   (require 'init-begin)
@@ -22,7 +22,7 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
   (require 'init-ui)
   (require 'init-org)
   (require 'init-text-manipulation)
-  (require 'init-programming-basic)
+  ;;(require 'init-programming-basic)
   (require 'init-window)
   (require 'init-tabs)
   (require 'init-dev)
@@ -115,8 +115,10 @@ C-n 为上移至下一行， n 代表 next。
 C-a 为移至行首， a 代表 ahead。
 C-e 为移至行尾， e 代表 end。
 
-在整个Mac系统都内置了这些快捷键。在很多应用里也是。
+M-<	Go to beginning of file
+M->	Go to end of file
 
+在整个Mac系统都内置了这些快捷键。在很多应用里也是。
 把mac的几个常用操作配置到Emacs里面。
 
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-basic.el
@@ -872,63 +874,6 @@ operator-pending state
 
 #+end_src
 
-*** init-programming-basic.el
-tree-sitter is an Emacs binding for Tree-sitter, an incremental parsing system.
-
-It aims to be the foundation for a new breed of Emacs packages that understand code structurally. For example:
-Faster, fine-grained code highlighting.
-More flexible code folding.
-Structural editing (like Paredit, or even better) for non-Lisp code.
-More informative indexing for imenu.
-#+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-programming-basic.el
-  ;; emacs29 内置 tree-sitter 
-  ;; 安装所有 tree-sitter langs libs : M-x treesit-auto-install-all   
-  (use-package treesit-auto
-    :demand t
-    :ensure t
-    :init (setq treesit-font-lock-level 4)
-    :config
-    (setq treesit-auto-install 'prompt)
-    (global-treesit-auto-mode))
-
-  ;;查找定义和引用
-  ;; xref-find-definitions   M-.
-  ;; xref-find-references    M-?
-  ;; xref-go-back            M-,
-  ;; xref-go-forward         C-M-,
-
-
-  ;; 使用 consult-imenu 列出文件内函数列表，方便跳转
-
-  ;; emacs29 内置 eglot:A client for Language Server Protocol servers
-  ;; lsp-mode 集成了很多包，功能丰富， eglot 功能相对简单
-  (require 'eglot)
-
-
-  (use-package yasnippet
-  :ensure t
-  :hook ((prog-mode . yas-minor-mode)
-	 (org-mode . yas-minor-mode))
-  :init
-  :config
-  (progn
-    (setq hippie-expand-try-functions-list
-	  '(yas/hippie-try-expand
-	    try-complete-file-name-partially
-	    try-expand-all-abbrevs
-	    try-expand-dabbrev
-	    try-expand-dabbrev-all-buffers
-	    try-expand-dabbrev-from-kill
-	    try-complete-lisp-symbol-partially
-	    try-complete-lisp-symbol))))
-
-  (use-package yasnippet-snippets
-  :ensure t
-  :after yasnippet) 
-
-  (provide 'init-programming-basic)
-
-#+end_src
 *** init-window.el 
 窗口管理
 evil 模式，在 normal state 按 :vsp vertical split 垂直分割窗口
@@ -1180,5 +1125,64 @@ use tabspace
                                  "/private/tmp/"
                                  ,package-user-dir)))
 
+#+end_src
+
+programming config
+
+tree-sitter is an Emacs binding for Tree-sitter, an incremental parsing system.
+
+It aims to be the foundation for a new breed of Emacs packages that understand code structurally. For example:
+Faster, fine-grained code highlighting.
+More flexible code folding.
+Structural editing (like Paredit, or even better) for non-Lisp code.
+More informative indexing for imenu.
+#+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-dev.el
+  
+  ;; emacs29 内置 tree-sitter 
+  ;; 安装所有 tree-sitter langs libs : M-x treesit-auto-install-all   
+  (use-package treesit-auto
+    :demand t
+    :ensure t
+    :init (setq treesit-font-lock-level 4)
+    :config
+    (setq treesit-auto-install 'prompt)
+    (global-treesit-auto-mode))
+
+  ;;查找定义和引用
+  ;; xref-find-definitions   M-.
+  ;; xref-find-references    M-?
+  ;; xref-go-back            M-,
+  ;; xref-go-forward         C-M-,
+
+
+  ;; 使用 consult-imenu 列出文件内函数列表，方便跳转
+
+  ;; emacs29 内置 eglot:A client for Language Server Protocol servers
+  ;; lsp-mode 集成了很多包，功能丰富， eglot 功能相对简单
+  (require 'eglot)
+
+
+  (use-package yasnippet
+  :ensure t
+  :hook ((prog-mode . yas-minor-mode)
+	 (org-mode . yas-minor-mode))
+  :init
+  :config
+  (progn
+    (setq hippie-expand-try-functions-list
+	  '(yas/hippie-try-expand
+	    try-complete-file-name-partially
+	    try-expand-all-abbrevs
+	    try-expand-dabbrev
+	    try-expand-dabbrev-all-buffers
+	    try-expand-dabbrev-from-kill
+	    try-complete-lisp-symbol-partially
+	    try-complete-lisp-symbol))))
+
+  (use-package yasnippet-snippets
+  :ensure t
+  :after yasnippet) 
+
 (provide 'init-dev)
+
 #+end_src

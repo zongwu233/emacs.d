@@ -16,7 +16,7 @@
 (require 'init-ui)
 (require 'init-org)
 (require 'init-text-manipulation)
-(require 'init-programming-basic)
+;;(require 'init-programming-basic)
 (require 'init-window)
 (require 'init-tabs)
 (require 'init-dev)
