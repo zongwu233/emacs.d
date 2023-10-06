@@ -1,3 +1,4 @@
+#+STARTUP: overview
 ** 模块化配置
 *** init.el 配置
 init.el 保持最小配置，其他功能都拆分到独立文件。
@@ -198,7 +199,7 @@ C-e 为移至行尾， e 代表 end。
   (global-set-key (kbd "s-z") 'undo) ;对应Windows上面的Ctrol-z 撤销
   (global-set-key (kbd "s-x") 'kill-region) ;对应Windows上面的Ctrol-x 剪切
 
-  
+
   ;;内置 package
   ;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了
   (use-package savehist
@@ -217,6 +218,10 @@ C-e 为移至行尾， e 代表 end。
   (use-package saveplace
     :hook (after-init . save-place-mode))
 
+;; Workaround with minified source files
+(use-package so-long
+  :ensure nil
+  :hook (after-init . global-so-long-mode))  
 
   (provide 'init-basic)
 
@@ -451,47 +456,68 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
 
 *** init-ui.el
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-ui.el
-  ;; -*- lexical-binding: t -*-
-  ;; install theme
-  (use-package gruvbox-theme :ensure t)
+;; -*- lexical-binding: t -*-
 
-  (load-theme 'gruvbox-light-soft t)
+;; install theme
+;;(use-package gruvbox-theme :ensure t)
+;;(load-theme 'gruvbox-light-soft t)
 
-  (use-package doom-modeline
+
+;; Use default theme in terminals
+(use-package doom-themes
     :ensure t
-    :init
-    (setq doom-modeline-minor-modes t)
-    :custom-face
-    (mode-line ((t (:height 0.95))))
-    (mode-line-inactive ((t (:height 0.95))))
-    :hook (after-init . doom-modeline-mode))
+    :when (display-graphic-p)
+    :config
+    (load-theme 'doom-one t)
+    (doom-themes-org-config))
 
-  (use-package simple
+  (use-package emacs
     :ensure nil
-    :hook (after-init . size-indication-mode)
-    :init
-    (progn
-      (setq column-number-mode t)
-      ))
+    :unless (display-graphic-p)
+    :config
+    (load-theme 'leuven t))
 
-  ;; M-x nerd-icons-install-fonts 安装必要的字体，否则有些字符不显示
-  (use-package nerd-icons
-    :ensure t
-    ;; :custom
-    ;; The Nerd Font you want to use in GUI
-    ;; "Symbols Nerd Font Mono" is the default and is recommended
-    ;; but you can use any other Nerd Font if you want
-    ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-    )
 
-  (use-package visual-fill-column
-    :ensure t
-    :init
-    (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
-    ;; Configure fill width
-    (setq visual-fill-column-center-text t))
+ (use-package doom-modeline
+  :ensure t
+  :hook (after-init . doom-modeline-mode)
+  :custom
+  (doom-modeline-irc nil)
+  (doom-modeline-mu4e nil)
+  (doom-modeline-gnus nil)
+  (doom-modeline-github nil)
+  (doom-modeline-persp-name nil)
+  (doom-modeline-unicode-fallback t)
+  (doom-modeline-enable-word-count nil))
 
-  (provide 'init-ui)
+(use-package simple
+      :ensure nil
+      :hook (after-init . size-indication-mode)
+      :init
+      (progn
+	(setq column-number-mode t)
+	))
+
+;; M-x nerd-icons-install-fonts 安装必要的字体，否则有些字符不显示
+(use-package nerd-icons
+      :ensure t
+      ;; :custom
+      ;; The Nerd Font you want to use in GUI
+      ;; "Symbols Nerd Font Mono" is the default and is recommended
+      ;; but you can use any other Nerd Font if you want
+      ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+      :when (display-graphic-p)
+      :demand t
+      )
+
+(use-package visual-fill-column
+      :ensure t
+      :init
+      (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
+      ;; Configure fill width
+      (setq visual-fill-column-center-text t))
+
+(provide 'init-ui)
 
 #+END_SRC
 *** init-org.el
@@ -1048,13 +1074,7 @@ Emacs 有很多插件用来管理窗口
 	    "\\*rustfmt\\*$" rustic-compilation-mode rustic-cargo-clippy-mode
 	    rustic-cargo-outdated-mode rustic-cargo-test-mode))
 
-    (when (display-grayscale-p)
-      (setq popper-mode-line
-	    '(:eval
-	      (concat
-	       (propertize " " 'face 'mode-line-emphasis)
-	       (all-the-icons-octicon "pin" :height 0.9 :v-adjust 0.0 :face 'mode-line-emphasis)
-	       (propertize " " 'face 'mode-line-emphasis)))))
+    
 
     (setq popper-echo-dispatch-actions t)
     (setq popper-group-function nil)
@@ -1093,88 +1113,58 @@ use build-in tab-bar
 use tabspace
 #+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-tabs.el
 
-  ;; build-in
+  ;; Windows layout recorder
+  ;;
+  ;; You can still use `winner-mode' on Emacs 26 or early. On Emacs 27, it's
+  ;; preferred over `winner-mode' for better compatibility with `tab-bar-mode'.
   (use-package tab-bar
-  :ensure nil
-  :init
-  (tab-bar-mode t)
-  (setq tab-bar-new-tab-choice "*scratch*") ;; buffer to show in new tabs
-  (setq tab-bar-close-button-show nil)      ;; hide tab close / X button
-  (setq tab-bar-show 1)                     ;; hide bar if <= 1 tabs open
-  (setq tab-bar-format '(tab-bar-format-tabs tab-bar-separator))
-
-
-  (custom-set-faces
-   '(tab-bar ((t (:inherit mode-line))))
-   '(tab-bar-tab ((t (:inherit mode-line :foreground "#504646"))))
-   '(tab-bar-tab-inactive ((t (:inherit mode-line-inactive :foreground "#64645A")))))
-
-  (defvar ct/circle-numbers-alist
-    '((0 . "⓪")
-      (1 . "①") 
-      (2 . "②")
-      (3 . "③")
-      (4 . "④")
-      (5 . "⑤")
-      (6 . "⑥")
-      (7 . "⑦")
-      (8 . "⑧")
-      (9 . "⑨"))
-    "Alist of integers to strings of circled unicode numbers.")
-
-   (defun ct/tab-bar-tab-name-format-default (tab i)
-    (let ((current-p (eq (car tab) 'current-tab))
-	  (tab-num (if (and tab-bar-tab-hints (< i 10))
-		       (alist-get i ct/circle-numbers-alist) "")))
-      (propertize
-       (concat tab-num
-	       " "
-	       (alist-get 'name tab)
-	       (or (and tab-bar-close-button-show
-			(not (eq tab-bar-close-button-show
-				 (if current-p 'non-selected 'selected)))
-			tab-bar-close-button)
-		   "")
-	       " ")
-       'face (funcall tab-bar-tab-face-function tab))))
-  (setq tab-bar-tab-name-format-function #'ct/tab-bar-tab-name-format-default)
-  (setq tab-bar-tab-hints t))
+    :ensure nil
+    :init  (tab-bar-mode t)
+    ;; 图标太丑了
+    ;;:hook (after-init . tab-bar-history-mode)
+    :custom
+    (tabbar-use-images nil)
+    (tab-bar-new-button-show nil)
+    (tab-bar-close-button-show nil)
+    (tab-bar-new-tab-choice "*scratch*")
+    (tab-bar-tab-hints t)
+   )
 
   (use-package tabspaces
-  :ensure t
-  :hook (after-init . tabspaces-mode) ;; use this only if you want the minor-mode loaded at startup.
-  :commands (tabspaces-switch-or-create-workspace
-	     tabspaces-open-or-create-project-and-workspace)
-  :custom
-  (tabspaces-use-filtered-buffers-as-default t)
-  (tabspaces-default-tab "Default")
-  (tabspaces-remove-to-default t)
-  (tabspaces-include-buffers '("*scratch*"))
-  ;; maybe slow 
-  ;;(tabspaces-session t)
-  ;;(tabspaces-session-auto-restore t)
-  :config
-  ;; Filter Buffers for Consult-Buffer
+    :ensure t
+    :hook (after-init . tabspaces-mode) ;; use this only if you want the minor-mode loaded at startup.
+    :commands (tabspaces-switch-or-create-workspace
+	       tabspaces-open-or-create-project-and-workspace)
+    :custom
+    (tabspaces-use-filtered-buffers-as-default t)
+    (tabspaces-default-tab "Default")
+    (tabspaces-remove-to-default t)
+    (tabspaces-include-buffers '("*scratch*"))
+    ;; maybe slow 
+    ;;(tabspaces-session t)
+    ;;(tabspaces-session-auto-restore t)
+    :config
+    ;; Filter Buffers for Consult-Buffer
 
-  (with-eval-after-load 'consult
-    ;; hide full buffer list (still available with "b" prefix)
-    (consult-customize consult--source-buffer :hidden nil :default nil)
-    ;; set consult-workspace buffer list
-    (defvar consult--source-workspace
-      (list :name "Workspace Buffers"
-	    :narrow ?w
-	    :history 'buffer-name-history
-	    :category 'buffer
-	    :state #'consult--buffer-state
-	    :default t
-	    :items (lambda () (consult--buffer-query
-			       :predicate #'tabspaces--local-buffer-p
-			       :sort 'visibility
-			       :as #'buffer-name)))
+    (with-eval-after-load 'consult
+      ;; hide full buffer list (still available with "b" prefix)
+      (consult-customize consult--source-buffer :hidden nil :default nil)
+      ;; set consult-workspace buffer list
+      (defvar consult--source-workspace
+	(list :name "Workspace Buffers"
+	      :narrow ?w
+	      :history 'buffer-name-history
+	      :category 'buffer
+	      :state #'consult--buffer-state
+	      :default t
+	      :items (lambda () (consult--buffer-query
+				 :predicate #'tabspaces--local-buffer-p
+				 :sort 'visibility
+				 :as #'buffer-name)))
 
-      "Set workspace buffer list for consult-buffer.")
-    (add-to-list 'consult-buffer-sources 'consult--source-workspace)))
+	"Set workspace buffer list for consult-buffer.")
+      (add-to-list 'consult-buffer-sources 'consult--source-workspace)))
 
 
-  (provide 'init-tabs)
+    (provide 'init-tabs)
 #+end_src
