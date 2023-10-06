@@ -6,6 +6,9 @@
   ;; 使用 vim 的 C-u 滚动界面操作
   ;; C-d C-u 向前翻页 向后翻页
   (setq evil-want-C-u-scroll t)
+  ;; C-i 导致 orgmode 的 src 文件输入回车的时候，src 内容自动缩进了， orgmode 的C-i 就是缩进。
+  ;;https://jeffkreeftmeijer.com/emacs-evil-org-tab/
+  (setq evil-want-C-i-jump nil)
   (evil-mode)
 
   ;; https://emacs.stackexchange.com/questions/46371/how-can-i-get-ret-to-follow-org-mode-links-when-using-evil-mode
