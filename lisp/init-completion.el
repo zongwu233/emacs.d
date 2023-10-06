@@ -1,13 +1,15 @@
-(use-package company
-  :ensure t
-  :bind (:map company-active-map
-	      ("C-n" . 'company-select-next)
-	      ("C-p" . 'company-select-previous))
-  :init
-  (global-company-mode t)
-  :config
-  (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0))
+;; -*- coding: utf-8; lexical-binding: t; -*-
+
+  (use-package company
+    :ensure t
+    :bind (:map company-active-map
+		("C-n" . 'company-select-next)
+		("C-p" . 'company-select-previous))
+    :init
+    (global-company-mode t)
+    :config
+    (setq company-minimum-prefix-length 1)
+    (setq company-idle-delay 0))
 
 ;;增强 minibuffer 补全
 (use-package vertico :ensure	t)
