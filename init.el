@@ -1,7 +1,7 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; open for debug error when you need.
-;;(setq debug-on-error t)
+(setq debug-on-error t)
 
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (require 'init-begin)
@@ -19,7 +19,7 @@
 (require 'init-programming-basic)
 (require 'init-window)
 (require 'init-tabs)
-
+(require 'init-dev)
 
 (setq custom-file (expand-file-name "~/.emacs.d/lisp/custom.el"))
 (load custom-file 'no-error 'no-message)

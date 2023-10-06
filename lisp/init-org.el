@@ -86,6 +86,7 @@
   :hook (org-mode . evil-org-mode)
   :after org
   :config
+  (setq evil-want-C-i-jump nil)
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))  
 
