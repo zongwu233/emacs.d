@@ -92,6 +92,11 @@
 	      savehist-autosave-interval 300)
   )
 
+;; 重启命令
+(use-package restart-emacs
+   :ensure t)
+
+  
   ;;内置package
   (use-package saveplace
     :hook (after-init . save-place-mode))
