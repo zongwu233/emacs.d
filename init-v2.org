@@ -331,8 +331,11 @@ M-x consult-directory-externally 然后输入文件目录，既可以用系统�
     (interactive "fOpen externally: ")
     (if (and (eq system-type 'windows-nt)
 	     (fboundp 'w32-shell-execute))
-	(shell-command-to-string (encode-coding-string (replace-regexp-in-string "/" "\\\\"
-										 (format "explorer.exe %s" (file-name-directory (expand-file-name file)))) 'gbk))
+	(shell-command-to-string (encode-coding-string
+				  (replace-regexp-in-string "/" "\\\\"
+				    (format "explorer.exe %s"
+					    (file-name-directory
+					  (expand-file-name file)))) 'gbk))
       (call-process (pcase system-type
 		      ('darwin "open")
 		      ('cygwin "cygstart")
@@ -355,44 +358,45 @@ M-x consult-directory-externally 然后输入文件目录，既可以用系统�
 
 *** init-awesome-tab.el
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-awesome-tab.el
-  ;;添加本地目录插件
-  (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
+   ;;添加本地目录插件
+   (add-to-list 'load-path (expand-file-name "~/.emacs.d/site-lisp/awesome-tab") )
 
-  ;; 使用本地文件安装的 package
-  (require 'awesome-tab)
-  (awesome-tab-mode t)
+   ;; 使用本地文件安装的 package
+   (require 'awesome-tab)
+   (awesome-tab-mode t)
 
-    (defun awesome-tab-buffer-groups ()
-      "`awesome-tab-buffer-groups' control buffers' group rules.
+     (defun awesome-tab-buffer-groups ()
+       "`awesome-tab-buffer-groups' control buffers' group rules.
 
-    Group awesome-tab with mode if buffer is derived from `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
-    All buffer name start with * will group to \"Emacs\".
-    Other buffer group by `awesome-tab-get-group-name' with project name."
-      (list
-       (cond
-	((or (string-equal "*" (substring (buffer-name) 0 1))
-	     (memq major-mode '(magit-process-mode
-				magit-status-mode
-				magit-diff-mode
-				magit-log-mode
-				magit-file-mode
-				magit-blob-mode
-				magit-blame-mode
-				)))
-	 "Emacs")
-	((derived-mode-p 'eshell-mode)
-	 "EShell")
-	((derived-mode-p 'emacs-lisp-mode)
-	 "Elisp")
-	((derived-mode-p 'dired-mode)
-	 "Dired")
-	((memq major-mode '(org-mode org-agenda-mode diary-mode))
-	 "OrgMode")
-	(t
-	 (awesome-tab-get-group-name (current-buffer))))))
+     Group awesome-tab with mode if buffer is derived from
+       `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
+     All buffer name start with * will group to \"Emacs\".
+     Other buffer group by `awesome-tab-get-group-name' with project name."
+       (list
+	(cond
+	 ((or (string-equal "*" (substring (buffer-name) 0 1))
+	      (memq major-mode '(magit-process-mode
+				 magit-status-mode
+				 magit-diff-mode
+				 magit-log-mode
+				 magit-file-mode
+				 magit-blob-mode
+				 magit-blame-mode
+				 )))
+	  "Emacs")
+	 ((derived-mode-p 'eshell-mode)
+	  "EShell")
+	 ((derived-mode-p 'emacs-lisp-mode)
+	  "Elisp")
+	 ((derived-mode-p 'dired-mode)
+	  "Dired")
+	 ((memq major-mode '(org-mode org-agenda-mode diary-mode))
+	  "OrgMode")
+	 (t
+	  (awesome-tab-get-group-name (current-buffer))))))
 
 
-    (provide 'init-awesome-tab)
+     (provide 'init-awesome-tab)
 #+END_SRC
 
 *** init-search.el
@@ -447,8 +451,8 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
 
 *** init-ui.el
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-ui.el
-    ;; -*- lexical-binding: t -*-
-    ;; install theme
+  ;; -*- lexical-binding: t -*-
+  ;; install theme
   (use-package gruvbox-theme :ensure t)
 
   (load-theme 'gruvbox-light-soft t)
@@ -461,28 +465,33 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
     (mode-line ((t (:height 0.95))))
     (mode-line-inactive ((t (:height 0.95))))
     :hook (after-init . doom-modeline-mode))
-  
-    (use-package simple
-      :ensure nil
-      :hook (after-init . size-indication-mode)
-      :init
-      (progn
-	(setq column-number-mode t)
-	))
 
-    ;; M-x nerd-icons-install-fonts 安装必要的字体，否则有些字符不显示
-    (use-package nerd-icons
-      :ensure t
-      ;; :custom
-      ;; The Nerd Font you want to use in GUI
-      ;; "Symbols Nerd Font Mono" is the default and is recommended
-      ;; but you can use any other Nerd Font if you want
-      ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-      )
+  (use-package simple
+    :ensure nil
+    :hook (after-init . size-indication-mode)
+    :init
+    (progn
+      (setq column-number-mode t)
+      ))
 
+  ;; M-x nerd-icons-install-fonts 安装必要的字体，否则有些字符不显示
+  (use-package nerd-icons
+    :ensure t
+    ;; :custom
+    ;; The Nerd Font you want to use in GUI
+    ;; "Symbols Nerd Font Mono" is the default and is recommended
+    ;; but you can use any other Nerd Font if you want
+    ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+    )
 
+  (use-package visual-fill-column
+    :ensure t
+    :init
+    (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
+    ;; Configure fill width
+    (setq visual-fill-column-center-text t))
 
-    (provide 'init-ui)
+  (provide 'init-ui)
 
 #+END_SRC
 *** init-org.el
@@ -508,96 +517,98 @@ M-RET  for creating new lists
 M-left/right/up/down
 
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-org.el
-  ;;安装最新版本 org 不使用内置版本
-  (use-package org
-    :pin gnu
-    :ensure t)
+    ;;安装最新版本 org 不使用内置版本
+    (use-package org
+      :pin gnu
+      :ensure t)
 
-  (use-package org-contrib
-    :pin nongnu
-    :ensure t)
+    (use-package org-contrib
+      :pin nongnu
+      :ensure t
+      :after org
+      (require 'org-checklist))
 
-  (require 'org-tempo)  ;开启easy template
+    (require 'org-tempo)  ;开启easy template
 
-  ;; 需要开启 electric-pair-mode
-  ;; 禁用左尖括号
-  (setq electric-pair-inhibit-predicate
-	`(lambda (c)
-	   (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
+    ;; 需要开启 electric-pair-mode
+    ;; 禁用左尖括号
+    (setq electric-pair-inhibit-predicate
+	  `(lambda (c)
+	     (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
 
-  (add-hook 'org-mode-hook
-	    (lambda ()
-	      (setq-local electric-pair-inhibit-predicate
-			  `(lambda (c)
-			     (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))))
-  ;; 更丰富的 TODO 状态
-  (setq org-todo-keywords
-      (quote ((sequence "TODO(t)" "STARTED(s)" "|" "DONE(d!/!)")
-	      (sequence "WAITING(w@/!)" "SOMEDAY(S)" "|" "CANCELLED(c@/!)" "MEETING(m)" "PHONE(p)"))))
-  (require 'org-checklist)
-  ;; need repeat task and properties
-  (setq org-log-done t)
-  (setq org-log-into-drawer t)
+    (add-hook 'org-mode-hook
+	      (lambda ()
+		(setq-local electric-pair-inhibit-predicate
+			    `(lambda (c)
+			       (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))))
+    ;; 更丰富的 TODO 状态
+    (setq org-todo-keywords
+	(quote ((sequence "TODO(t)" "STARTED(s)" "|" "DONE(d!/!)")
+		(sequence "WAITING(w@/!)" "SOMEDAY(S)" "|" "CANCELLED(c@/!)" "MEETING(m)" "PHONE(p)"))))
 
-  ;; C-c C-s schedule
-  ;; C-c C-d deadline
-  (global-set-key (kbd "C-c a") 'org-agenda)
-  (setq org-agenda-files '("~/org/gtd.org"))
-  (setq org-agenda-span 'day)
+    ;; need repeat task and properties
+    (setq org-log-done t)
+    (setq org-log-into-drawer t)
 
-  ;; see https://github.com/abo-abo/org-download/issues/131
-  (use-package org-download
-  :ensure t
-  :after org
-  :config
-  (setq-default
-   org-download-image-dir "~/org/images"
-   ;; Basename setting seems to be simply ignored.
-   org-download-screenshot-basename ".png"
-   org-download-timestamp "org_%Y%m%d-%H%M%S_"
-   org-image-actual-width 960
-   org-download-heading-lvl nil)
-  :custom
-  (org-download-screenshot-method
-   (cond
-    ((eq system-type 'gnu/linux)
-     "xclip -selection clipboard -t image/png -o > '%s'")
-    ((eq system-type 'darwin)
-     "pngpaste %s")))
-  :bind
-  (:map org-mode-map
-	(("C-M-y" . org-download-screenshot)
-	 ("s-y" . org-download-yank))))  
+    ;; C-c C-s schedule
+    ;; C-c C-d deadline
+    (global-set-key (kbd "C-c a") 'org-agenda)
+    (setq org-agenda-files '("~/org/gtd.org"))
+    (setq org-agenda-span 'day)
 
-  ;; Drag-and-drop to `dired`
-  (add-hook 'dired-mode-hook 'org-download-enable)
+    ;; see https://github.com/abo-abo/org-download/issues/131
+    (use-package org-download
+    :ensure t
+    :after org
+    :config
+    (setq-default
+     org-download-image-dir "~/org/images"
+     ;; Basename setting seems to be simply ignored.
+     org-download-screenshot-basename ".png"
+     org-download-timestamp "org_%Y%m%d-%H%M%S_"
+     org-image-actual-width 960
+     org-download-heading-lvl nil)
+    :custom
+    (org-download-screenshot-method
+     (cond
+      ((eq system-type 'gnu/linux)
+       "xclip -selection clipboard -t image/png -o > '%s'")
+      ((eq system-type 'darwin)
+       "pngpaste %s")))
+    :bind
+    (:map org-mode-map
+	  (("C-M-y" . org-download-screenshot)
+	   ("s-y" . org-download-yank))))  
 
-(defun org-apperance-evil-hack ()
-  (add-hook 'evil-insert-state-entry-hook #'org-appear-manual-start nil t)
-  (add-hook 'evil-insert-state-exit-hook #'org-appear-manual-stop nil t))
+    ;; Drag-and-drop to `dired`
+    (add-hook 'dired-mode-hook 'org-download-enable)
 
-(use-package org-appear
-  :ensure t
-  :after org
-  :hook (org-mode . org-appear-mode)
-  :init
-  (setq org-appear-trigger 'manual)
-  (add-hook 'org-mode-hook 'org-apperance-evil-hack))
-(use-package org-superstar
-  :ensure t
-  :after org
-  :hook (org-mode . org-superstar-mode)
-  :config
-  (setq org-superstar-special-todo-items t))
-(use-package evil-org
-  :ensure t
-  :hook (org-mode . evil-org-mode)
-  :after org
-  :config
-  (require 'evil-org-agenda)
-  (evil-org-agenda-set-keys))  
+  (defun org-apperance-evil-hack ()
+    (add-hook 'evil-insert-state-entry-hook #'org-appear-manual-start nil t)
+    (add-hook 'evil-insert-state-exit-hook #'org-appear-manual-stop nil t))
 
-  (provide 'init-org)
+  (use-package org-appear
+    :ensure t
+    :after org
+    :hook (org-mode . org-appear-mode)
+    :init
+    (setq org-appear-trigger 'manual)
+    (add-hook 'org-mode-hook 'org-apperance-evil-hack))
+  (use-package org-superstar
+    :ensure t
+    :after org
+    :hook (org-mode . org-superstar-mode)
+    :config
+    (setq org-superstar-special-todo-items t))
+  (use-package evil-org
+    :ensure t
+    :hook (org-mode . evil-org-mode)
+    :after org
+    :config
+    (require 'evil-org-agenda)
+    (evil-org-agenda-set-keys))  
+
+    (provide 'init-org)
 #+END_SRC
 
 *** 使用 use-package
@@ -617,6 +628,9 @@ bind 用于绑定快捷键。
     ;; 使用 vim 的 C-u 滚动界面操作
     ;; C-d C-u 向前翻页 向后翻页
     (setq evil-want-C-u-scroll t)
+    ;; C-i 导致 orgmode 的 src 文件输入回车的时候，src 内容自动缩进了， orgmode 的C-i 就是缩进。
+    ;;https://jeffkreeftmeijer.com/emacs-evil-org-tab/
+    (setq evil-want-C-i-jump nil)
     (evil-mode)
 
     ;; https://emacs.stackexchange.com/questions/46371/how-can-i-get-ret-to-follow-org-mode-links-when-using-evil-mode

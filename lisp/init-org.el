@@ -5,7 +5,9 @@
 
   (use-package org-contrib
     :pin nongnu
-    :ensure t)
+    :ensure t
+    :after org
+    (require 'org-checklist))
 
   (require 'org-tempo)  ;开启easy template
 
@@ -24,7 +26,7 @@
   (setq org-todo-keywords
       (quote ((sequence "TODO(t)" "STARTED(s)" "|" "DONE(d!/!)")
 	      (sequence "WAITING(w@/!)" "SOMEDAY(S)" "|" "CANCELLED(c@/!)" "MEETING(m)" "PHONE(p)"))))
-  (require 'org-checklist)
+
   ;; need repeat task and properties
   (setq org-log-done t)
   (setq org-log-into-drawer t)
