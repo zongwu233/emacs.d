@@ -6,7 +6,7 @@
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (require 'init-begin)
 (require 'init-package)
-(require 'init-keybinding)
+(require 'init-evil)
 (require 'init-basic)
 (require 'init-completion)
 ;;使用内置的 tab-bar 在 init-window 配置 
@@ -15,7 +15,6 @@
 (require 'init-search)
 (require 'init-ui)
 (require 'init-org)
-(require 'init-evil)
 (require 'init-text-manipulation)
 (require 'init-programming-basic)
 (require 'init-window)
