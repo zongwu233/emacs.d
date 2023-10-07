@@ -241,6 +241,8 @@ M->	Go to end of file
 
   ;;禁止自动生成备份文件
   (setq make-backup-files nil)
+  ;;禁止在文件末尾添加一个换行符
+  (setq require-final-newline nil) 
 
   ;;最近打开文件
   (require 'recentf)
