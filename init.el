@@ -8,10 +8,7 @@
 ;; `gcmh' package.
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)
-  
-;; Increase how much is read from processes in a single chunk (default is 4kb).
-;; `lsp-mode' benefits from that.
-(setq read-process-output-max (* 4 1024 1024))
+
 
 (let ((dir (locate-user-emacs-file "lisp")))
   (add-to-list 'load-path (file-name-as-directory dir)))  
@@ -31,10 +28,10 @@
 (require 'init-ui)
 (require 'init-org)
 (require 'init-text-manipulation)
-;;(require 'init-programming-basic)
 (require 'init-window)
 (require 'init-tabs)
 (require 'init-dev)
+(require 'init-git)
 
 (provide 'init)
 

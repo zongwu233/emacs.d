@@ -64,10 +64,7 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 ;; `gcmh' package.
 (setq gc-cons-threshold most-positive-fixnum
       gc-cons-percentage 0.6)
-  
-;; Increase how much is read from processes in a single chunk (default is 4kb).
-;; `lsp-mode' benefits from that.
-(setq read-process-output-max (* 4 1024 1024))
+
 
 (let ((dir (locate-user-emacs-file "lisp")))
   (add-to-list 'load-path (file-name-as-directory dir)))  
@@ -87,10 +84,10 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 (require 'init-ui)
 (require 'init-org)
 (require 'init-text-manipulation)
-;;(require 'init-programming-basic)
 (require 'init-window)
 (require 'init-tabs)
 (require 'init-dev)
+(require 'init-git)
 
 (provide 'init)
 
@@ -859,106 +856,109 @@ operator-pending state
 强大的文本区域选择
 而且支持将选择之后的文本，传输给其他命令，比如 搜索，高亮，替换 等等。
 #+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-text-manipulation.el
-    (defun my/search-project-for-symbol-at-point ()
-    (interactive)
-    (if (use-region-p)
-	(progn
-	  (consult-ripgrep (project-root (project-current))
-			   (buffer-substring (region-beginning) (region-end))))))
 
-    (defun my/evil-quick-replace (beg end )
-    (interactive "r")
-    (when (evil-visual-state-p)
-      (evil-exit-visual-state)
-      (let ((selection (regexp-quote (buffer-substring-no-properties beg end))))
-	(setq command-string (format "%%s /%s//g" selection))
-	(minibuffer-with-setup-hook
-	    (lambda () (backward-char 2))
-	  (evil-ex command-string)))))
+;; -*- lexical-binding: t -*-
 
-    (define-key evil-visual-state-map (kbd "C-r") 'my/evil-quick-replace)
+  (defun my/search-project-for-symbol-at-point ()
+      (interactive)
+      (if (use-region-p)
+	  (progn
+	    (consult-ripgrep (project-root (project-current))
+			     (buffer-substring (region-beginning) (region-end))))))
 
+      (defun my/evil-quick-replace (beg end )
+      (interactive "r")
+      (when (evil-visual-state-p)
+	(evil-exit-visual-state)
+	(let ((selection (regexp-quote (buffer-substring-no-properties beg end))))
+	  (setq command-string (format "%%s /%s//g" selection))
+	  (minibuffer-with-setup-hook
+	      (lambda () (backward-char 2))
+	    (evil-ex command-string)))))
 
-    (use-package expand-region
-    :ensure t
-    :bind ("C-=" . er/expand-region)
-    :config
-    (defadvice er/prepare-for-more-expansions-internal
-	(around helm-ag/prepare-for-more-expansions-internal activate)
-      ad-do-it
-      (let ((new-msg (concat (car ad-return-value)
-			     ", H to highlight in buffers"
-			     ", / to search in project, "
-			     "e iedit mode in functions, "
-			     "f to search in files, "
-			     "b to search in opened buffers"))
-	    (new-bindings (cdr ad-return-value)))
-	(cl-pushnew
-	 '("H" (lambda ()
-		 (interactive)
-		 (call-interactively
-		  'my/highlight-dwim)))
-	 new-bindings)
-	(cl-pushnew
-	 '("/" (lambda ()
-		 (interactive)
-		 (call-interactively
-		  'my/search-project-for-symbol-at-point)))
-	 new-bindings)
-	(cl-pushnew
-	 '("e" (lambda ()
-		 (interactive)
-		 (call-interactively
-		  'evil-multiedit-match-all)))
-	 new-bindings)
-	(cl-pushnew
-	 '("f" (lambda ()
-		 (interactive)
-		 (call-interactively
-		  'find-file)))
-	 new-bindings)
-	(cl-pushnew
-	 '("b" (lambda ()
-		 (interactive)
-		 (call-interactively
-		  'consult-line)))
-	 new-bindings)
-	(setq ad-return-value (cons new-msg new-bindings)))))
+      (define-key evil-visual-state-map (kbd "C-r") 'my/evil-quick-replace)
 
 
-    (defun my/highlight-dwim ()
-    (interactive)
-    (if (use-region-p)
-	(progn
-	  (highlight-frame-toggle)
-	  (deactivate-mark))
-      (symbol-overlay-put)))
+      (use-package expand-region
+      :ensure t
+      :bind ("C-=" . er/expand-region)
+      :config
+      (defadvice er/prepare-for-more-expansions-internal
+	  (around helm-ag/prepare-for-more-expansions-internal activate)
+	ad-do-it
+	(let ((new-msg (concat (car ad-return-value)
+			       ", H to highlight in buffers"
+			       ", / to search in project, "
+			       "e iedit mode in functions, "
+			       "f to search in files, "
+			       "b to search in opened buffers"))
+	      (new-bindings (cdr ad-return-value)))
+	  (cl-pushnew
+	   '("H" (lambda ()
+		   (interactive)
+		   (call-interactively
+		    'my/highlight-dwim)))
+	   new-bindings)
+	  (cl-pushnew
+	   '("/" (lambda ()
+		   (interactive)
+		   (call-interactively
+		    'my/search-project-for-symbol-at-point)))
+	   new-bindings)
+	  (cl-pushnew
+	   '("e" (lambda ()
+		   (interactive)
+		   (call-interactively
+		    'evil-multiedit-match-all)))
+	   new-bindings)
+	  (cl-pushnew
+	   '("f" (lambda ()
+		   (interactive)
+		   (call-interactively
+		    'find-file)))
+	   new-bindings)
+	  (cl-pushnew
+	   '("b" (lambda ()
+		   (interactive)
+		   (call-interactively
+		    'consult-line)))
+	   new-bindings)
+	  (setq ad-return-value (cons new-msg new-bindings)))))
 
-  
 
-  (use-package symbol-overlay
-    :ensure t
-    :config
-    (define-key symbol-overlay-map (kbd "h") 'nil))
-
-  (use-package highlight-global
-    :ensure nil
-    :commands (highlight-frame-toggle)
-    :quelpa (highlight-global :fetcher github :repo "glen-dai/highlight-global")
-    :config
-    (progn
-      (setq-default highlight-faces
-		    '(('hi-red-b . 0)
-		      ('hi-aquamarine . 0)
-		      ('hi-pink . 0)
-		      ('hi-blue-b . 0)))))
-  (defun my/clear-highlight ()
-    (interactive)
-    (clear-highlight-frame) ;; highlight-global function
-    (symbol-overlay-remove-all))
+      (defun my/highlight-dwim ()
+      (interactive)
+      (if (use-region-p)
+	  (progn
+	    (highlight-frame-toggle)
+	    (deactivate-mark))
+	(symbol-overlay-put)))
 
 
-  (provide 'init-text-manipulation)
+
+    (use-package symbol-overlay
+      :ensure t
+      :config
+      (define-key symbol-overlay-map (kbd "h") 'nil))
+
+    (use-package highlight-global
+      :ensure nil
+      :commands (highlight-frame-toggle)
+      :quelpa (highlight-global :fetcher github :repo "glen-dai/highlight-global")
+      :config
+      (progn
+	(setq-default highlight-faces
+		      '(('hi-red-b . 0)
+			('hi-aquamarine . 0)
+			('hi-pink . 0)
+			('hi-blue-b . 0)))))
+    (defun my/clear-highlight ()
+      (interactive)
+      (clear-highlight-frame) ;; highlight-global function
+      (symbol-overlay-remove-all))
+
+
+    (provide 'init-text-manipulation)
 
 #+end_src
 
@@ -970,161 +970,165 @@ evil 模式，在 normal state 按 :vsp vertical split 垂直分割窗口
 按 C-x 1 关闭其他窗口
 Emacs 有很多插件用来管理窗口
 #+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-window.el
-      ;;Enable window-numbering-mode and use M-1 through M-0 to navigate.
-      (use-package window-numbering
-	    :init
-	    :ensure t
-	    :hook (after-init . window-numbering-mode))
+  ;; 默认竖直拆分窗口，Emcas 叫 horizontal split 
+  (setq split-width-threshold 1 )
+  ;;Enable window-numbering-mode and use M-1 through M-0 to navigate.
+  (use-package window-numbering
+	  :init
+	  :ensure t
+	  :hook (after-init . window-numbering-mode))
 
 
-      ;; buf-move-left right up down 
-      (use-package buffer-move
-	  :ensure t)
+    ;; buf-move-left right up down 
+    (use-package buffer-move
+	:ensure t)
 
-      ;; M-x resize-window 然后再按下面的命令
-      (use-package resize-window
-	:ensure t
-	:init
-	(defvar resize-window-dispatch-alist
-	  '((?n resize-window--enlarge-down " Resize - Expand down" t)
-	    (?p resize-window--enlarge-up " Resize - Expand up" t)
-	    (?f resize-window--enlarge-horizontally " Resize - horizontally" t)
-	    (?b resize-window--shrink-horizontally " Resize - shrink horizontally" t)
-	    (?r resize-window--reset-windows " Resize - reset window layout" nil)
-	    (?w resize-window--cycle-window-positive " Resize - cycle window" nil)
-	    (?W resize-window--cycle-window-negative " Resize - cycle window" nil)
-	    (?2 split-window-below " Split window horizontally" nil)
-	    (?3 split-window-right " Slit window vertically" nil)
-	    (?0 resize-window--delete-window " Delete window" nil)
-	    (?K resize-window--kill-other-windows " Kill other windows (save state)" nil)
-	    (?y resize-window--restore-windows " (when state) Restore window configuration" nil)
-	    (?? resize-window--display-menu " Resize - display menu" nil))
-	  "List of actions for `resize-window-dispatch-default.
-      Main data structure of the dispatcher with the form:
-      \(char function documentation match-capitals\)"))
+    ;; M-x resize-window 然后再按下面的命令
+    (use-package resize-window
+      :ensure t
+      :init
+      (defvar resize-window-dispatch-alist
+	'((?n resize-window--enlarge-down " Resize - Expand down" t)
+	  (?p resize-window--enlarge-up " Resize - Expand up" t)
+	  (?f resize-window--enlarge-horizontally " Resize - horizontally" t)
+	  (?b resize-window--shrink-horizontally " Resize - shrink horizontally" t)
+	  (?r resize-window--reset-windows " Resize - reset window layout" nil)
+	  (?w resize-window--cycle-window-positive " Resize - cycle window" nil)
+	  (?W resize-window--cycle-window-negative " Resize - cycle window" nil)
+	  (?2 split-window-below " Split window horizontally" nil)
+	  (?3 split-window-right " Slit window vertically" nil)
+	  (?0 resize-window--delete-window " Delete window" nil)
+	  (?K resize-window--kill-other-windows " Kill other windows (save state)" nil)
+	  (?y resize-window--restore-windows " (when state) Restore window configuration" nil)
+	  (?? resize-window--display-menu " Resize - display menu" nil))
+	"List of actions for `resize-window-dispatch-default.
+    Main data structure of the dispatcher with the form:
+    \(char function documentation match-capitals\)"))
 
-    ;; build-in package
-    ;; window 操作的 redo undo  
-    (use-package winner
-      :ensure nil
-      :commands (winner-undo winner-redo)
-      :hook (after-init . winner-mode)
-      :init (setq winner-boring-buffers '("*Completions*"
-					  "*Compile-Log*"
-					  "*inferior-lisp*"
-					  "*Fuzzy Completions*"
-					  "*Apropos*"
-					  "*Help*"
-					  "*cvs*"
-					  "*Buffer List*"
-					  "*Ibuffer*"
-					  "*esh command on file*")))
+  ;; -*- lexical-binding: t -*-
 
-
-    ;;buffers 重要程度不一样，有一些 buffer 很重要，比如主要工作区域。有一些 buffer 是暂时性的，比如日志，消息
-    ;;有一些buffer很重要但只是时不时需要用一下， 比如 REPL  Shell Docs 不需要一直展示
-    ;; popper 就是将所有的 buffer 分类管理，分成 regular 和 popups ，对 popups 有着丰富强大的管理
-    (use-package popper
-    :ensure t
-    :defines popper-echo-dispatch-actions
-    :commands popper-group-by-directory
-    :bind (:map popper-mode-map
-		("s-`" . popper-toggle-latest)
-		("s-o"   . popper-cycle)
-		("M-`" . popper-toggle-type))
-    :hook (emacs-startup . popper-mode)
-    :init
-    (setq popper-reference-buffers
-	  '("\\*Messages\\*"
-	    "Output\\*$" "\\*Pp Eval Output\\*$"
-	    "\\*Compile-Log\\*"
-	    "\\*Completions\\*"
-	    "\\*Warnings\\*"
-	    "\\*Flymake diagnostics.*\\*"
-	    "\\*Async Shell Command\\*"
-	    "\\*Apropos\\*"
-	    "\\*Backtrace\\*"
-	    "\\*prodigy\\*"
-	    "\\*Calendar\\*"
-	    "\\*Embark Actions\\*"
-	    "\\*Finder\\*"
-	    "\\*Kill Ring\\*"
-	    "\\*Embark Export:.*\\*"
-	    "\\*Edit Annotation.*\\*"
-	    "\\*Flutter\\*"
-	    bookmark-bmenu-mode
-	    lsp-bridge-ref-mode
-	    comint-mode
-	    compilation-mode
-	    help-mode helpful-mode
-	    tabulated-list-mode
-	    Buffer-menu-mode
-	    occur-mode
-	    gnus-article-mode devdocs-mode
-	    grep-mode occur-mode rg-mode deadgrep-mode ag-mode pt-mode
-	    ivy-occur-mode ivy-occur-grep-mode
-	    process-menu-mode list-environment-mode cargo-process-mode
-	    youdao-dictionary-mode osx-dictionary-mode fanyi-mode
-
-	    "^\\*eshell.*\\*.*$" eshell-mode
-	    "^\\*shell.*\\*.*$"  shell-mode
-	    "^\\*terminal.*\\*.*$" term-mode
-	    "^\\*vterm.*\\*.*$"  vterm-mode
-
-	    "\\*DAP Templates\\*$" dap-server-log-mode
-	    "\\*ELP Profiling Restuls\\*" profiler-report-mode
-	    "\\*Flycheck errors\\*$" " \\*Flycheck checker\\*$"
-	    "\\*Paradox Report\\*$" "\\*package update results\\*$" "\\*Package-Lint\\*$"
-	    "\\*[Wo]*Man.*\\*$"
-	    "\\*ert\\*$" overseer-buffer-mode
-	    "\\*gud-debug\\*$"
-	    "\\*lsp-help\\*$" "\\*lsp session\\*$"
-	    "\\*quickrun\\*$"
-	    "\\*tldr\\*$"
-	    "\\*vc-.*\\*$"
-	    "\\*eldoc\\*"
-	    "^\\*elfeed-entry\\*$"
-	    "^\\*macro expansion\\**"
-
-	    "\\*Agenda Commands\\*" "\\*Org Select\\*" "\\*Capture\\*" "^CAPTURE-.*\\.org*"
-	    "\\*Gofmt Errors\\*$" "\\*Go Test\\*$" godoc-mode
-	    "\\*docker-containers\\*" "\\*docker-images\\*" "\\*docker-networks\\*" "\\*docker-volumes\\*"
-	    "\\*prolog\\*" inferior-python-mode inf-ruby-mode swift-repl-mode
-	    "\\*rustfmt\\*$" rustic-compilation-mode rustic-cargo-clippy-mode
-	    rustic-cargo-outdated-mode rustic-cargo-test-mode))
-
-    
-
-    (setq popper-echo-dispatch-actions t)
-    (setq popper-group-function nil)
-    :config
-    (popper-echo-mode 1)
-
-    (with-no-warnings
-      (defun my-popper-fit-window-height (win)
-	"Determine the height of popup window WIN by fitting it to the buffer's content."
-	(fit-window-to-buffer
-	 win
-	 (floor (frame-height) 3)
-	 (floor (frame-height) 3)))
-      (setq popper-window-height #'my-popper-fit-window-height)
-
-      (defun popper-close-window-hack (&rest _)
-	"Close popper window via `C-g'."
-	;; `C-g' can deactivate region
-	(when (and (called-interactively-p 'interactive)
-		   (not (region-active-p))
-		   popper-open-popup-alist)
-	  (let ((window (caar popper-open-popup-alist)))
-	    (when (window-live-p window)
-	      (delete-window window)))))
-      (advice-add #'keyboard-quit :before #'popper-close-window-hack)))
-  
-  
-    
+  ;; build-in package
+  ;; window 操作的 redo undo  
+  (use-package winner
+    :ensure nil
+    :commands (winner-undo winner-redo)
+    :hook (after-init . winner-mode)
+    :init (setq winner-boring-buffers '("*Completions*"
+					"*Compile-Log*"
+					"*inferior-lisp*"
+					"*Fuzzy Completions*"
+					"*Apropos*"
+					"*Help*"
+					"*cvs*"
+					"*Buffer List*"
+					"*Ibuffer*"
+					"*esh command on file*")))
 
 
-      (provide 'init-window)
+  ;;buffers 重要程度不一样，有一些 buffer 很重要，比如主要工作区域。有一些 buffer 是暂时性的，比如日志，消息
+  ;;有一些buffer很重要但只是时不时需要用一下， 比如 REPL  Shell Docs 不需要一直展示
+  ;; popper 就是将所有的 buffer 分类管理，分成 regular 和 popups ，对 popups 有着丰富强大的管理
+  (use-package popper
+  :ensure t
+  :defines popper-echo-dispatch-actions
+  :commands popper-group-by-directory
+  :bind (:map popper-mode-map
+	      ("s-`" . popper-toggle-latest)
+	      ("s-o"   . popper-cycle)
+	      ("M-`" . popper-toggle-type))
+  :hook (emacs-startup . popper-mode)
+  :init
+  (setq popper-reference-buffers
+	'("\\*Messages\\*"
+	  "Output\\*$" "\\*Pp Eval Output\\*$"
+	  "\\*Compile-Log\\*"
+	  "\\*Completions\\*"
+	  "\\*Warnings\\*"
+	  "\\*Flymake diagnostics.*\\*"
+	  "\\*Async Shell Command\\*"
+	  "\\*Apropos\\*"
+	  "\\*Backtrace\\*"
+	  "\\*prodigy\\*"
+	  "\\*Calendar\\*"
+	  "\\*Embark Actions\\*"
+	  "\\*Finder\\*"
+	  "\\*Kill Ring\\*"
+	  "\\*Embark Export:.*\\*"
+	  "\\*Edit Annotation.*\\*"
+	  "\\*Flutter\\*"
+	  bookmark-bmenu-mode
+	  lsp-bridge-ref-mode
+	  comint-mode
+	  compilation-mode
+	  help-mode helpful-mode
+	  tabulated-list-mode
+	  Buffer-menu-mode
+	  occur-mode
+	  gnus-article-mode devdocs-mode
+	  grep-mode occur-mode rg-mode deadgrep-mode ag-mode pt-mode
+	  ivy-occur-mode ivy-occur-grep-mode
+	  process-menu-mode list-environment-mode cargo-process-mode
+	  youdao-dictionary-mode osx-dictionary-mode fanyi-mode
+
+	  "^\\*eshell.*\\*.*$" eshell-mode
+	  "^\\*shell.*\\*.*$"  shell-mode
+	  "^\\*terminal.*\\*.*$" term-mode
+	  "^\\*vterm.*\\*.*$"  vterm-mode
+
+	  "\\*DAP Templates\\*$" dap-server-log-mode
+	  "\\*ELP Profiling Restuls\\*" profiler-report-mode
+	  "\\*Flycheck errors\\*$" " \\*Flycheck checker\\*$"
+	  "\\*Paradox Report\\*$" "\\*package update results\\*$" "\\*Package-Lint\\*$"
+	  "\\*[Wo]*Man.*\\*$"
+	  "\\*ert\\*$" overseer-buffer-mode
+	  "\\*gud-debug\\*$"
+	  "\\*lsp-help\\*$" "\\*lsp session\\*$"
+	  "\\*quickrun\\*$"
+	  "\\*tldr\\*$"
+	  "\\*vc-.*\\*$"
+	  "\\*eldoc\\*"
+	  "^\\*elfeed-entry\\*$"
+	  "^\\*macro expansion\\**"
+
+	  "\\*Agenda Commands\\*" "\\*Org Select\\*" "\\*Capture\\*" "^CAPTURE-.*\\.org*"
+	  "\\*Gofmt Errors\\*$" "\\*Go Test\\*$" godoc-mode
+	  "\\*docker-containers\\*" "\\*docker-images\\*" "\\*docker-networks\\*" "\\*docker-volumes\\*"
+	  "\\*prolog\\*" inferior-python-mode inf-ruby-mode swift-repl-mode
+	  "\\*rustfmt\\*$" rustic-compilation-mode rustic-cargo-clippy-mode
+	  rustic-cargo-outdated-mode rustic-cargo-test-mode))
+
+
+
+  (setq popper-echo-dispatch-actions t)
+  (setq popper-group-function nil)
+  :config
+  (popper-echo-mode 1)
+
+  (with-no-warnings
+    (defun my-popper-fit-window-height (win)
+      "Determine the height of popup window WIN by fitting it to the buffer's content."
+      (fit-window-to-buffer
+       win
+       (floor (frame-height) 3)
+       (floor (frame-height) 3)))
+    (setq popper-window-height #'my-popper-fit-window-height)
+
+    (defun popper-close-window-hack (&rest _)
+      "Close popper window via `C-g'."
+      ;; `C-g' can deactivate region
+      (when (and (called-interactively-p 'interactive)
+		 (not (region-active-p))
+		 popper-open-popup-alist)
+	(let ((window (caar popper-open-popup-alist)))
+	  (when (window-live-p window)
+	    (delete-window window)))))
+    (advice-add #'keyboard-quit :before #'popper-close-window-hack)))
+
+
+
+
+
+    (provide 'init-window)
 #+end_src
 
 *** init-tabs.el
@@ -1273,4 +1277,74 @@ More informative indexing for imenu.
 
 (provide 'init-dev)
 
+#+end_src
+*** init-git.el
+#+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-git.el
+;;; init-git.el  -*- lexical-binding: t -*-
+;; git-messenger has been superseded by {C-x v h} (`vc-region-history')
+;;
+;; Explicit binding makes it load lazily although it's the default.
+;; See `magit-define-global-key-bindings' for more information.
+(use-package magit
+  :ensure t
+  ;:hook (git-commit-setup . git-commit-turn-on-flyspell)
+  :bind (("C-x g"   . magit-status)
+         ("C-x M-g" . magit-dispatch)
+         ("C-c M-g" . magit-file-dispatch))
+  :custom
+  (magit-diff-refine-hunk t)
+  (magit-diff-paint-whitespace nil)
+  (magit-ediff-dwim-show-on-hunks t))
+
+;; NOTE: `diff-hl' depends on `vc'
+(use-package vc
+  :ensure nil
+  :custom
+  (vc-follow-symlinks t)
+  (vc-allow-async-revert t)
+  (vc-handled-backends '(Git)))
+
+;; Highlight uncommitted changes using VC
+(use-package diff-hl
+  :ensure t
+  :hook ((after-init         . global-diff-hl-mode)
+         (dired-mode         . diff-hl-dired-mode-unless-remote)
+         (magit-pre-refresh  . diff-hl-magit-pre-refresh)
+         (magit-post-refresh . diff-hl-magit-post-refresh))
+  :config
+  ;; When Emacs runs in terminal, show the indicators in margin instead.
+  (unless (display-graphic-p)
+    (diff-hl-margin-mode)))
+
+;; Visual diff interface
+(use-package ediff
+  :ensure nil
+  ;; Restore window config after quitting ediff
+  :hook ((ediff-before-setup . ediff-save-window-conf)
+         (ediff-quit         . ediff-restore-window-conf))
+  :config
+  (defvar local-ediff-saved-window-conf nil)
+
+  (defun ediff-save-window-conf ()
+    (setq local-ediff-saved-window-conf (current-window-configuration)))
+
+  (defun ediff-restore-window-conf ()
+    (when (window-configuration-p local-ediff-saved-window-conf)
+      (set-window-configuration local-ediff-saved-window-conf)))
+  :custom
+  (ediff-highlight-all-diffs t)
+  (ediff-window-setup-function 'ediff-setup-windows-plain)
+  (ediff-split-window-function 'split-window-horizontally)
+  (ediff-merge-split-window-function 'split-window-horizontally))
+
+;; Setup gitignore mode
+(use-package conf-mode
+  :ensure nil
+  :mode (("\\.gitignore\\'"     . conf-unix-mode)
+         ("\\.gitconfig\\'"     . conf-unix-mode)
+         ("\\.gitattributes\\'" . conf-unix-mode)))
+
+(provide 'init-git)
+
+;;; init-git.el ends here
 #+end_src

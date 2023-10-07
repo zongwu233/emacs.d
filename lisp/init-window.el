@@ -1,5 +1,7 @@
+;; 默认竖直拆分窗口，Emcas 叫 horizontal split 
+(setq split-width-threshold 1 )
 ;;Enable window-numbering-mode and use M-1 through M-0 to navigate.
-  (use-package window-numbering
+(use-package window-numbering
 	:init
 	:ensure t
 	:hook (after-init . window-numbering-mode))
@@ -30,6 +32,8 @@
       "List of actions for `resize-window-dispatch-default.
   Main data structure of the dispatcher with the form:
   \(char function documentation match-capitals\)"))
+
+;; -*- lexical-binding: t -*-
 
 ;; build-in package
 ;; window 操作的 redo undo  
