@@ -40,9 +40,50 @@
 
   ;; 使用 consult-imenu 列出文件内函数列表，方便跳转
 
-  ;; emacs29 内置 eglot:A client for Language Server Protocol servers
-  ;; lsp-mode 集成了很多包，功能丰富， eglot 功能相对简单
-  (require 'eglot)
+
+(defun my-eglot-keybindgs ()
+  (define-key evil-motion-state-map "gR" #'eglot-rename)
+  (define-key evil-motion-state-map "gr" #'xref-find-references)
+  (define-key evil-normal-state-map "gi" #'eglot-find-implementation)
+  (define-key evil-motion-state-map "gh" #'eldoc)
+  (define-key evil-normal-state-map "ga" #'eglot-code-actions))
+;; emacs29 内置 eglot:A client for Language Server Protocol servers
+;; lsp-mode 集成了很多包，功能丰富， eglot 功能相对简单
+(use-package eglot
+  :ensure nil
+  :init
+  (advice-add 'eglot-ensure :after 'my-eglot-keybindgs)
+  :bind (:map eglot-mode-map
+	      ("C-c l a" . eglot-code-actions)
+	      ("C-c l r" . eglot-rename)
+	      ("C-c l o" . eglot-code-action-organize-imports)
+	      ("C-c l f" . eglot-format)
+	      ("C-c l d" . eldoc)
+	      ("s-<return>" . eglot-code-actions))
+  :hook
+  (css-mode . eglot-ensure)
+  (js2-mode . eglot-ensure)
+  (js-mode . eglot-ensure)
+  (web-mode . eglot-ensure)
+  (rust-mode . eglot-ensure)
+  (elixir-mode . eglot-ensure)
+  (c++-mode . eglot-ensure)
+  (python-mode . eglot-ensure)
+
+  :config
+  (setq eglot-send-changes-idle-time 0.2)
+  ;(add-to-list 'eglot-server-programs '(rust-mode "rust-analyzer"))
+  ;(add-to-list 'eglot-server-programs '(c++-mode . ("clangd" "--enable-config")))
+  (add-to-list 'eglot-server-programs '(web-mode . ("vscode-html-language-server" "--stdio")))
+  ;(add-to-list 'eglot-server-programs '(elixir-mode "~/.emacs.d/elixir-ls/release/language_server.sh"))
+
+(setq read-process-output-max (* 1024 1024))
+(push :documentHighlightProvider eglot-ignored-server-capabilities)
+(setq eldoc-echo-area-use-multiline-p nil))
+
+(use-package consult-eglot
+  :ensure t
+  :defer t)
 
 
   (use-package yasnippet

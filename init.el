@@ -32,6 +32,7 @@
 (require 'init-tabs)
 (require 'init-dev)
 (require 'init-git)
+(require 'init-python)  
 
 (provide 'init)
 

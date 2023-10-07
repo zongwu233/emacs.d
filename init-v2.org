@@ -88,6 +88,7 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 (require 'init-tabs)
 (require 'init-dev)
 (require 'init-git)
+(require 'init-python)  
 
 (provide 'init)
 
@@ -198,117 +199,167 @@ M->	Go to end of file
 把mac的几个常用操作配置到Emacs里面。
 
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-basic.el
-  ;; -*- lexical-binding: t -*-
+    ;; -*- lexical-binding: t -*-
 
-  ;; emacs >= 26  开启行号可以这么设置
-  (display-line-numbers-mode 1)
+    ;; emacs >= 26  开启行号可以这么设置
+    (display-line-numbers-mode 1)
 
-  ;; 关闭工具栏，tool-bar-mode 即为一个 Minor Mode
-  (tool-bar-mode -1)
-  ;; 关闭文件滑动控件
-  (scroll-bar-mode -1)
-  ;; 更改光标的样式
-  (setq-default cursor-type 'bar)
+    ;; 关闭工具栏，tool-bar-mode 即为一个 Minor Mode
+    (tool-bar-mode -1)
+    ;; 关闭文件滑动控件
+    (scroll-bar-mode -1)
+    ;; 更改光标的样式
+    (setq-default cursor-type 'bar)
 
-  ;;不再需要，下面有更好的补全插件
-  ;;(icomplete-mode 1)
+    ;;不再需要，下面有更好的补全插件
+    ;;(icomplete-mode 1)
 
-  ;; 快速打开配置文件
-  (defun open-init-file()
-    (interactive)
-    (find-file "~/.emacs.d/init-v2.org"))
-  ;; 这一行代码，将函数 open-init-file 绑定到 <f2> 键上
-  (global-set-key (kbd "<f2>") 'open-init-file)
+    ;; 快速打开配置文件
+    (defun open-init-file()
+      (interactive)
+      (find-file "~/.emacs.d/init-v2.org"))
+    ;; 这一行代码，将函数 open-init-file 绑定到 <f2> 键上
+    (global-set-key (kbd "<f2>") 'open-init-file)
 
-  ;; 更改显示字体大小 16pt
-  ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
-  (set-face-attribute 'default nil :height 160);;
+    ;; 更改显示字体大小 16pt
+    ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
+    (set-face-attribute 'default nil :height 160);;
 
-  ;;让鼠标滚动更好用
-  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
-  (setq mouse-wheel-progressive-speed nil)
+    ;;让鼠标滚动更好用
+    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
+    (setq mouse-wheel-progressive-speed nil)
 
-  ;; orgmode 进行文学编程的时候， < 会匹配 ) 导致影响匹配的高亮提示
-  ;; 参见 https://www.reddit.com/r/orgmode/comments/s869jc/matching_parentheses_in_orgmode/
-  ;; 可以使用 org-edit-special 在 minibuffer 里面进行 code 的校验
-  ;;括号匹配高亮
-  (show-paren-mode t)
-  ;;自动补全成对的符号
-  (electric-pair-mode 1)
+    ;; orgmode 进行文学编程的时候， < 会匹配 ) 导致影响匹配的高亮提示
+    ;; 参见 https://www.reddit.com/r/orgmode/comments/s869jc/matching_parentheses_in_orgmode/
+    ;; 可以使用 org-edit-special 在 minibuffer 里面进行 code 的校验
+    ;;括号匹配高亮
+    (show-paren-mode t)
+    ;;自动补全成对的符号
+    (electric-pair-mode 1)
 
-  ;;禁止自动生成备份文件
-  (setq make-backup-files nil)
-  ;;禁止在文件末尾添加一个换行符
-  (setq require-final-newline nil) 
+    ;;禁止自动生成备份文件
+    (setq make-backup-files nil)
+    ;;禁止在文件末尾添加一个换行符
+    (setq require-final-newline nil) 
 
-  ;;最近打开文件
-  (require 'recentf)
-  (recentf-mode 1)
-  (setq recentf-max-menu-item 8)
-  (global-set-key (kbd "C-x b") 'consult-buffer)
+    ;;最近打开文件
+    (require 'recentf)
+    (recentf-mode 1)
+    (setq recentf-max-menu-item 8)
+    (global-set-key (kbd "C-x b") 'consult-buffer)
 
-  (delete-selection-mode 1)
+    (delete-selection-mode 1)
 
-  ;;高亮当前行
-  (global-hl-line-mode 1)
+    ;;高亮当前行
+    (global-hl-line-mode 1)
 
-  ;; 自动加载在外部修改的文件
-  (global-auto-revert-mode 1)
+    ;; 自动加载在外部修改的文件
+    (global-auto-revert-mode 1)
 
-  ;; close auto save
-  (setq auto-save-default nil)
-  ;;关闭错误的时候哔哔的警告声音
-  (setq ring-bell-function 'ignore)
-  ;; simple to y or n
-  (fset 'yes-or-no-p 'y-or-n-p)
+    ;; close auto save
+    (setq auto-save-default nil)
+    ;;关闭错误的时候哔哔的警告声音
+    (setq ring-bell-function 'ignore)
+    ;; simple to y or n
+    (fset 'yes-or-no-p 'y-or-n-p)
 
-  (setq inhibit-splash-screen t)
-  (setq initial-scratch-message ";; Happy Hacking! Emacs loves you!")
-
-
-
-  ;; mac option key ->  meta
-  ;; mac commad key -> super
-  (setq mac-option-modifier 'meta
-	mac-command-modifier 'super)
-
-  (global-set-key (kbd "s-a") 'mark-whole-buffer) ;;对应Windows上面的Ctrl-a 全选
-  (global-set-key (kbd "s-c") 'kill-ring-save) ;;对应Windows上面的Ctrl-c 复制
-  (global-set-key (kbd "s-s") 'save-buffer) ;; 对应Windows上面的Ctrl-s 保存
-  (global-set-key (kbd "s-v") 'yank) ;对应Windows上面的Ctrl-v 粘贴
-  (global-set-key (kbd "s-z") 'undo) ;对应Windows上面的Ctrol-z 撤销
-  (global-set-key (kbd "s-x") 'kill-region) ;对应Windows上面的Ctrol-x 剪切
+    (setq inhibit-splash-screen t)
+    (setq initial-scratch-message ";; Happy Hacking! Emacs loves you!")
 
 
-  ;;内置 package
-  ;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了
-  (use-package savehist
-    :hook (after-init . savehist-mode)
-    :init (setq enable-recursive-minibuffers t ; Allow commands in minibuffers
-	      history-length 1000
-	      savehist-additional-variables '(mark-ring
-					      global-mark-ring
-					      search-ring
-					      regexp-search-ring
-					      extended-command-history)
-	      savehist-autosave-interval 300)
-  )
 
-;; 重启命令
-(use-package restart-emacs
-   :ensure t)
+    ;; mac option key ->  meta
+    ;; mac commad key -> super
+    (setq mac-option-modifier 'meta
+	  mac-command-modifier 'super)
 
-  
-  ;;内置package
-  (use-package saveplace
-    :hook (after-init . save-place-mode))
+    (global-set-key (kbd "s-a") 'mark-whole-buffer) ;;对应Windows上面的Ctrl-a 全选
+    (global-set-key (kbd "s-c") 'kill-ring-save) ;;对应Windows上面的Ctrl-c 复制
+    (global-set-key (kbd "s-s") 'save-buffer) ;; 对应Windows上面的Ctrl-s 保存
+    (global-set-key (kbd "s-v") 'yank) ;对应Windows上面的Ctrl-v 粘贴
+    (global-set-key (kbd "s-z") 'undo) ;对应Windows上面的Ctrol-z 撤销
+    (global-set-key (kbd "s-x") 'kill-region) ;对应Windows上面的Ctrol-x 剪切
 
-;; Workaround with minified source files
-(use-package so-long
-  :ensure nil
-  :hook (after-init . global-so-long-mode))  
 
-  (provide 'init-basic)
+    ;;内置 package
+    ;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了
+    (use-package savehist
+      :hook (after-init . savehist-mode)
+      :init (setq enable-recursive-minibuffers t ; Allow commands in minibuffers
+		history-length 1000
+		savehist-additional-variables '(mark-ring
+						global-mark-ring
+						search-ring
+						regexp-search-ring
+						extended-command-history)
+		savehist-autosave-interval 300)
+    )
+
+  ;; MacOS specific
+  (use-package exec-path-from-shell
+    :ensure t
+    :when (eq system-type 'darwin)
+    :hook (after-init . exec-path-from-shell-initialize))
+
+  ;; 重启命令
+  (use-package restart-emacs
+     :ensure t)
+
+
+    ;;内置package
+    (use-package saveplace
+      :hook (after-init . save-place-mode))
+
+  ;; Workaround with minified source files
+  (use-package so-long
+    :ensure nil
+    :hook (after-init . global-so-long-mode))  
+
+
+  (use-package general
+    :ensure t
+    :init
+    (with-eval-after-load 'evil
+      (general-add-hook 'after-init-hook
+			(lambda (&rest _)
+			  (when-let ((messages-buffer (get-buffer "*Messages*")))
+			    (with-current-buffer messages-buffer
+			      (evil-normalize-keymaps))))
+			nil
+			nil
+			t))
+
+
+    (general-create-definer global-definer
+      :keymaps 'override
+      :states '(insert emacs normal hybrid motion visual operator)
+      :prefix "SPC"
+      :non-normal-prefix "C-SPC")
+
+    (defmacro +general-global-menu! (name infix-key &rest body)
+      "Create a definer named +general-global-NAME wrapping global-definer.
+  Create prefix map: +general-global-NAME. Prefix bindings in BODY with INFIX-KEY."
+      (declare (indent 2))
+      `(progn
+	 (general-create-definer ,(intern (concat "+general-global-" name))
+	   :wrapping global-definer
+	   :prefix-map ',(intern (concat "+general-global-" name "-map"))
+	   :infix ,infix-key
+	   :wk-full-keys nil
+	   "" '(:ignore t :which-key ,name))
+	 (,(intern (concat "+general-global-" name))
+	  ,@body)))
+
+    (general-create-definer global-leader
+      :keymaps 'override
+      :states '(emacs normal hybrid motion visual operator)
+      :prefix ","
+      "" '(:ignore t :which-key (lambda (arg) `(,(cadr (split-string (car arg) " ")) . ,(replace-regexp-in-string "-mode$" "" (symbol-name major-mode)))))))
+
+
+
+
+    (provide 'init-basic)
 
 
 #+END_SRC
@@ -1229,53 +1280,94 @@ More flexible code folding.
 Structural editing (like Paredit, or even better) for non-Lisp code.
 More informative indexing for imenu.
 #+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-dev.el
-  
-  ;; emacs29 内置 tree-sitter 
-  ;; 安装所有 tree-sitter langs libs : M-x treesit-auto-install-all   
-  (use-package treesit-auto
-    :demand t
-    :ensure t
-    :init (setq treesit-font-lock-level 4)
-    :config
-    (setq treesit-auto-install 'prompt)
-    (global-treesit-auto-mode))
 
-  ;;查找定义和引用
-  ;; xref-find-definitions   M-.
-  ;; xref-find-references    M-?
-  ;; xref-go-back            M-,
-  ;; xref-go-forward         C-M-,
+    ;; emacs29 内置 tree-sitter 
+    ;; 安装所有 tree-sitter langs libs : M-x treesit-auto-install-all   
+    (use-package treesit-auto
+      :demand t
+      :ensure t
+      :init (setq treesit-font-lock-level 4)
+      :config
+      (setq treesit-auto-install 'prompt)
+      (global-treesit-auto-mode))
+
+    ;;查找定义和引用
+    ;; xref-find-definitions   M-.
+    ;; xref-find-references    M-?
+    ;; xref-go-back            M-,
+    ;; xref-go-forward         C-M-,
 
 
-  ;; 使用 consult-imenu 列出文件内函数列表，方便跳转
+    ;; 使用 consult-imenu 列出文件内函数列表，方便跳转
 
+
+  (defun my-eglot-keybindgs ()
+    (define-key evil-motion-state-map "gR" #'eglot-rename)
+    (define-key evil-motion-state-map "gr" #'xref-find-references)
+    (define-key evil-normal-state-map "gi" #'eglot-find-implementation)
+    (define-key evil-motion-state-map "gh" #'eldoc)
+    (define-key evil-normal-state-map "ga" #'eglot-code-actions))
   ;; emacs29 内置 eglot:A client for Language Server Protocol servers
   ;; lsp-mode 集成了很多包，功能丰富， eglot 功能相对简单
-  (require 'eglot)
+  (use-package eglot
+    :ensure nil
+    :init
+    (advice-add 'eglot-ensure :after 'my-eglot-keybindgs)
+    :bind (:map eglot-mode-map
+		("C-c l a" . eglot-code-actions)
+		("C-c l r" . eglot-rename)
+		("C-c l o" . eglot-code-action-organize-imports)
+		("C-c l f" . eglot-format)
+		("C-c l d" . eldoc)
+		("s-<return>" . eglot-code-actions))
+    :hook
+    (css-mode . eglot-ensure)
+    (js2-mode . eglot-ensure)
+    (js-mode . eglot-ensure)
+    (web-mode . eglot-ensure)
+    (rust-mode . eglot-ensure)
+    (elixir-mode . eglot-ensure)
+    (c++-mode . eglot-ensure)
+    (python-mode . eglot-ensure)
+
+    :config
+    (setq eglot-send-changes-idle-time 0.2)
+    ;(add-to-list 'eglot-server-programs '(rust-mode "rust-analyzer"))
+    ;(add-to-list 'eglot-server-programs '(c++-mode . ("clangd" "--enable-config")))
+    (add-to-list 'eglot-server-programs '(web-mode . ("vscode-html-language-server" "--stdio")))
+    ;(add-to-list 'eglot-server-programs '(elixir-mode "~/.emacs.d/elixir-ls/release/language_server.sh"))
+
+  (setq read-process-output-max (* 1024 1024))
+  (push :documentHighlightProvider eglot-ignored-server-capabilities)
+  (setq eldoc-echo-area-use-multiline-p nil))
+
+  (use-package consult-eglot
+    :ensure t
+    :defer t)
 
 
-  (use-package yasnippet
-  :ensure t
-  :hook ((prog-mode . yas-minor-mode)
-	 (org-mode . yas-minor-mode))
-  :init
-  :config
-  (progn
-    (setq hippie-expand-try-functions-list
-	  '(yas/hippie-try-expand
-	    try-complete-file-name-partially
-	    try-expand-all-abbrevs
-	    try-expand-dabbrev
-	    try-expand-dabbrev-all-buffers
-	    try-expand-dabbrev-from-kill
-	    try-complete-lisp-symbol-partially
-	    try-complete-lisp-symbol))))
+    (use-package yasnippet
+    :ensure t
+    :hook ((prog-mode . yas-minor-mode)
+	   (org-mode . yas-minor-mode))
+    :init
+    :config
+    (progn
+      (setq hippie-expand-try-functions-list
+	    '(yas/hippie-try-expand
+	      try-complete-file-name-partially
+	      try-expand-all-abbrevs
+	      try-expand-dabbrev
+	      try-expand-dabbrev-all-buffers
+	      try-expand-dabbrev-from-kill
+	      try-complete-lisp-symbol-partially
+	      try-complete-lisp-symbol))))
 
-  (use-package yasnippet-snippets
-  :ensure t
-  :after yasnippet) 
+    (use-package yasnippet-snippets
+    :ensure t
+    :after yasnippet) 
 
-(provide 'init-dev)
+  (provide 'init-dev)
 
 #+end_src
 *** init-git.el
@@ -1347,4 +1439,33 @@ More informative indexing for imenu.
 (provide 'init-git)
 
 ;;; init-git.el ends here
+#+end_src
+*** init-python.el
+#+begin_src emacs-lisp :tangle ~/.emacs.d/lisp/init-python.el
+  ;;; init-python.el  -*- lexical-binding: t -*-
+
+  ;; Python Mode
+  ;; Install: pip install pyflakes autopep8
+  (use-package python
+    :ensure t
+    :hook (inferior-python-mode . (lambda ()
+				    (process-query-on-exit-flag
+				     (get-process "Python"))))
+    :init
+    ;; Disable readline based native completion
+    (setq python-shell-completion-native-enable nil)
+    :config
+    (global-leader
+      :major-modes
+      '(python-mode t)
+      ;;and the keymaps:
+      :keymaps
+      '(python-mode-map)
+      "e" 'live-py-set-version)
+    (setq python-shell-interpreter "python3"))
+
+    ;; Live Coding in Python
+    (use-package live-py-mode :ensure t)
+  
+    (provide 'init-python)
 #+end_src
