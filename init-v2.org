@@ -201,6 +201,29 @@ M->	Go to end of file
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-basic.el
     ;; -*- lexical-binding: t -*-
 
+
+;; Suppress GUI features and more
+(setq use-file-dialog nil
+      use-dialog-box nil
+      inhibit-x-resources t
+      inhibit-default-init t
+      inhibit-startup-screen t
+      inhibit-startup-message t
+      inhibit-startup-buffer-menu t)
+
+;; Pixelwise resize
+(setq window-resize-pixelwise t
+      frame-resize-pixelwise t)
+
+;; Linux specific
+(setq x-gtk-use-system-tooltips nil
+      x-gtk-use-native-input t
+      x-underline-at-descent-line t)
+
+;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to prompt
+;; for the key passphrase.
+(setq epg-pinentry-mode 'loopback)
+
     ;; emacs >= 26  开启行号可以这么设置
     (display-line-numbers-mode 1)
 
@@ -223,7 +246,7 @@ M->	Go to end of file
 
     ;; 更改显示字体大小 16pt
     ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
-    (set-face-attribute 'default nil :height 160);;
+    (set-face-attribute 'default nil :height 170);;
 
     ;;让鼠标滚动更好用
     (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
@@ -240,7 +263,50 @@ M->	Go to end of file
     ;;禁止自动生成备份文件
     (setq make-backup-files nil)
     ;;禁止在文件末尾添加一个换行符
-    (setq require-final-newline nil) 
+    (setq require-final-newline nil)
+
+;; No lock files
+(setq create-lockfiles nil)
+
+;; Always load the newest file
+(setq load-prefer-newer t)
+
+;; Cutting and pasting use primary/clipboard
+(setq select-enable-primary t
+      select-enable-clipboard t)
+
+;; No gc for font caches
+(setq inhibit-compacting-font-caches t)
+
+;; Improve display
+(setq display-raw-bytes-as-hex t
+      redisplay-skip-fontification-on-input t)
+
+;; No eyes distraction
+(setq blink-cursor-mode nil)
+
+;; The nano style for truncated long lines.
+(setq auto-hscroll-mode 'current-line)
+
+;; Treats the `_' as a word constituent
+(add-hook 'after-change-major-mode-hook
+          (lambda ()
+            (modify-syntax-entry ?_ "w")))
+
+;; No tabs
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+
+;; Sane defaults
+(setq use-short-answers t)
+;; Inhibit switching out from `y-or-n-p' and `read-char-choice'
+(setq y-or-n-p-use-read-key t
+      read-char-choice-use-read-key t)
+
+;; Enable the disabled dired commands
+(put 'dired-find-alternate-file 'disabled nil)
+
+
 
     ;;最近打开文件
     (require 'recentf)
