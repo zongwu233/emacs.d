@@ -24,7 +24,8 @@
 (setq epg-pinentry-mode 'loopback)
 
     ;; emacs >= 26  开启行号可以这么设置
-    (display-line-numbers-mode 1)
+    (global-display-line-numbers-mode 1)
+    (setq-default display-line-numbers-width-start t)
 
     ;; 关闭工具栏，tool-bar-mode 即为一个 Minor Mode
     (tool-bar-mode -1)
