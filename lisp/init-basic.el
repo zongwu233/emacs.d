@@ -106,39 +106,6 @@
 (put 'dired-find-alternate-file 'disabled nil)
 
 
-;; Show line/column number and more
-(use-package simple
-  :ensure nil
-  :custom
-  ;; show line/column/filesize in modeline
-  (line-number-mode t)
-  (column-number-mode t)
-  (size-indication-mode t)
-  ;; No visual feedback on copy/delete.
-  (copy-region-blink-delay 0)
-  (delete-pair-blink-delay 0)
-  ;; confusing if no fringes (GUI only).
-  (visual-line-fringe-indicators '(nil right-curly-arrow))
-  ;; don't save current clipboard text before replacing it
-  (save-interprogram-paste-before-kill nil)
-  ;; eliminate duplicates
-  (kill-do-not-save-duplicates t)
-  ;; include '\n' when point starts at the beginning-of-line
-  (kill-whole-line t)
-  ;; show cwd when `shell-command' and `async-shell-command'
-  (shell-command-prompt-show-cwd t)
-  ;; show the name of character in `what-cursor-position'
-  (what-cursor-show-names t)
-  ;; List only applicable commands.
-  ;;
-  ;; ``` elisp
-  ;; (defun foo ()
-  ;;   (interactive nil org-mode)
-  ;;   (message "foo"))
-  ;; ```
-  ;;
-  ;; M-x foo should only be available in `org-mode` or modes derived from `org-mode`.
-  (read-extended-command-predicate #'command-completion-default-include-p))
 
     ;;最近打开文件
     (require 'recentf)

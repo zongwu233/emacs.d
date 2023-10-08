@@ -33,6 +33,7 @@
 (require 'init-dev)
 (require 'init-git)
 (require 'init-python)  
+(require 'init-tools)
 
 (provide 'init)
 
