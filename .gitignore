@@ -81,4 +81,5 @@ package-quickstart.el
 .lsp-session*
 bookmarks
 projects
+eln-cache/
 
