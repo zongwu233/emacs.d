@@ -9,14 +9,14 @@
 
   ;; buf-move-left right up down 
   (use-package buffer-move
-      :ensure t)
+  :ensure t)
 
   ;; M-x resize-window 然后再按下面的命令
   (use-package resize-window
     :ensure t
     :init
     (defvar resize-window-dispatch-alist
-      '((?n resize-window--enlarge-down " Resize - Expand down" t)
+  '((?n resize-window--enlarge-down " Resize - Expand down" t)
 	(?p resize-window--enlarge-up " Resize - Expand up" t)
 	(?f resize-window--enlarge-horizontally " Resize - horizontally" t)
 	(?b resize-window--shrink-horizontally " Resize - shrink horizontally" t)
@@ -29,7 +29,7 @@
 	(?K resize-window--kill-other-windows " Kill other windows (save state)" nil)
 	(?y resize-window--restore-windows " (when state) Restore window configuration" nil)
 	(?? resize-window--display-menu " Resize - display menu" nil))
-      "List of actions for `resize-window-dispatch-default.
+  "List of actions for `resize-window-dispatch-default.
   Main data structure of the dispatcher with the form:
   \(char function documentation match-capitals\)"))
 
@@ -42,15 +42,15 @@
   :commands (winner-undo winner-redo)
   :hook (after-init . winner-mode)
   :init (setq winner-boring-buffers '("*Completions*"
-				      "*Compile-Log*"
-				      "*inferior-lisp*"
-				      "*Fuzzy Completions*"
-				      "*Apropos*"
-				      "*Help*"
-				      "*cvs*"
-				      "*Buffer List*"
-				      "*Ibuffer*"
-				      "*esh command on file*")))
+				  "*Compile-Log*"
+				  "*inferior-lisp*"
+				  "*Fuzzy Completions*"
+				  "*Apropos*"
+				  "*Help*"
+				  "*cvs*"
+				  "*Buffer List*"
+				  "*Ibuffer*"
+				  "*esh command on file*")))
 
 
 ;;buffers 重要程度不一样，有一些 buffer 很重要，比如主要工作区域。有一些 buffer 是暂时性的，比如日志，消息
@@ -67,7 +67,7 @@
 :hook (emacs-startup . popper-mode)
 :init
 (setq popper-reference-buffers
-      '("\\*Messages\\*"
+  '("\\*Messages\\*"
 	"Output\\*$" "\\*Pp Eval Output\\*$"
 	"\\*Compile-Log\\*"
 	"\\*Completions\\*"
@@ -145,9 +145,9 @@
     "Close popper window via `C-g'."
     ;; `C-g' can deactivate region
     (when (and (called-interactively-p 'interactive)
-	       (not (region-active-p))
-	       popper-open-popup-alist)
-      (let ((window (caar popper-open-popup-alist)))
+	   (not (region-active-p))
+	   popper-open-popup-alist)
+  (let ((window (caar popper-open-popup-alist)))
 	(when (window-live-p window)
 	  (delete-window window)))))
   (advice-add #'keyboard-quit :before #'popper-close-window-hack)))

@@ -61,7 +61,7 @@
   (interactive "fOpen externally: ")
   (if (and (eq system-type 'windows-nt)
 	   (fboundp 'w32-shell-execute))
-      (shell-command-to-string (encode-coding-string
+  (shell-command-to-string (encode-coding-string
 				(replace-regexp-in-string "/" "\\\\"
 				  (format "explorer.exe %s"
 					  (file-name-directory

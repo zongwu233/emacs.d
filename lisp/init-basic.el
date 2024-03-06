@@ -16,7 +16,7 @@
 
 ;; Linux specific
 (setq x-gtk-use-system-tooltips nil
-      x-gtk-use-native-input nil
+      x-gtk-use-native-input nil  ;; 不要随意设置为t,采用Fcitx5 输入法时这里要设置nil
       x-underline-at-descent-line t)
 
 ;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to prompt
