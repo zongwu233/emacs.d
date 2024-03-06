@@ -1,4 +1,4 @@
-    ;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
 
 
 ;; Suppress GUI features and more
@@ -16,7 +16,7 @@
 
 ;; Linux specific
 (setq x-gtk-use-system-tooltips nil
-      x-gtk-use-native-input t
+      x-gtk-use-native-input nil
       x-underline-at-descent-line t)
 
 ;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to prompt
@@ -145,7 +145,8 @@
     (global-set-key (kbd "s-v") 'yank) ;对应Windows上面的Ctrl-v 粘贴
     (global-set-key (kbd "s-z") 'undo) ;对应Windows上面的Ctrol-z 撤销
     (global-set-key (kbd "s-x") 'kill-region) ;对应Windows上面的Ctrol-x 剪切
-
+    (global-unset-key (kbd "C-SPC"))  ; input method key 
+    (global-set-key (kbd "M-SPC") 'set-mark-command)   ; replace to m-space
 
     ;;内置 package
     ;;保存命令历史，在emacs重启之后，能够智能提示最近的操作命令，否则重启之后都清空了

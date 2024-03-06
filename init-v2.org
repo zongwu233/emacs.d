@@ -1,5 +1,8 @@
 #+STARTUP: overview
 ** 模块化配置
+*** intro
+base on https://github.com/condy0919/.emacs.d
+依赖 nerd-icons, 请确保 M-x nerd-icons-install-fonts 安装对应的字体以显示图标。
 *** early-init.el
 在 init.el 配置之前加载
 #+begin_src emacs-lisp :tangle ~/.emacs.d/early-init.el
@@ -218,7 +221,7 @@ M->	Go to end of file
 
 ;; Linux specific
 (setq x-gtk-use-system-tooltips nil
-      x-gtk-use-native-input t
+      x-gtk-use-native-input nil  ;; 不要随意设置为t,采用Fcitx5 输入法时这里要设置nil
       x-underline-at-descent-line t)
 
 ;; With GPG 2.1+, this forces gpg-agent to use the Emacs minibuffer to prompt
