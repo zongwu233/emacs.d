@@ -82,4 +82,4 @@ package-quickstart.el
 bookmarks
 projects
 eln-cache/
-
+org-persist/*

@@ -1,0 +1,23 @@
+# windows 环境使用说明
+* 安装 AutoHotKey V2软件
+* 编写 mapping 脚本
+#+BEGIN_SRC
+  #HotIf WinActive("ahk_exe emacs.exe")  
+  CapsLock::Ctrl
+  #HotIf
+#+END_SRC
+
+* 设置开机自动启动
+
+按下 Win + R，输入：
+#+BEGIN_SRC 
+shell:startup
+#+END_SRC
+然后 回车，会打开 Windows 启动文件夹。
+把 .ahk 脚本的快捷方式 放进去：
+右键 CapsToCtrl.ahk 文件，选择 创建快捷方式。
+把这个快捷方式 拖动到 startup 文件夹里。
+设置快捷方式以管理员权限运行（否则某些应用可能无法拦截键盘事件）：
+右键 .ahk 脚本的快捷方式 → 选择 属性。
+切换到 快捷方式 选项卡 → 点击 高级。
+勾选 “以管理员身份运行”，然后 确定 → 应用。
