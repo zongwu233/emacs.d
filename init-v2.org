@@ -3,6 +3,9 @@
 *** intro
 base on https://github.com/condy0919/.emacs.d
 依赖 nerd-icons, 请确保 M-x nerd-icons-install-fonts 安装对应的字体以显示图标。
+注：windows 环境下安装了 nerd-icons-fonts, 依然会有部分图标无法正常显示。
+在 macOS 中使用了系统改键，调整了CapsLock按键效果为Ctrl。
+在 Windows 环境中，使用了 AutoHotKey 软件达成相同效果。
 *** early-init.el
 在 init.el 配置之前加载
 #+begin_src emacs-lisp :tangle ~/.emacs.d/early-init.el
