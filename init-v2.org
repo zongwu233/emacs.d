@@ -3,7 +3,8 @@
 *** intro
 base on https://github.com/condy0919/.emacs.d
 依赖 nerd-icons, 请确保 M-x nerd-icons-install-fonts 安装对应的字体以显示图标。
-注：windows 环境下安装了 nerd-icons-fonts, 依然会有部分图标无法正常显示。
+windows 环境下安装 nerd-icons-fonts,执行 M-x nerd-icons-install-fonts,需要使用代理，
+下载之后，手动安装fonts文件。重启 emcas。
 在 macOS 中使用了系统改键，调整了CapsLock按键效果为Ctrl。
 在 Windows 环境中，使用了 AutoHotKey 软件达成相同效果。
 *** early-init.el
