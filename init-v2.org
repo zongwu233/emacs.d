@@ -2,6 +2,7 @@
 ** 模块化配置
 *** intro
 base on https://github.com/condy0919/.emacs.d
+当前使用 Emacs 版本 29.4
 依赖 nerd-icons, 请确保 M-x nerd-icons-install-fonts 安装对应的字体以显示图标。
 windows 环境下安装 nerd-icons-fonts,执行 M-x nerd-icons-install-fonts,需要使用代理，
 下载之后，手动安装fonts文件。重启 emcas。
