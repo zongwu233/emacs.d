@@ -15,18 +15,18 @@
   ;; 需要开启 electric-pair-mode
   ;; 禁用左尖括号
   (setq electric-pair-inhibit-predicate
-	`(lambda (c)
-	   (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
+    `(lambda (c)
+       (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
 
   (add-hook 'org-mode-hook
-	    (lambda ()
-	  (setq-local electric-pair-inhibit-predicate
-			  `(lambda (c)
-			     (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))))
+        (lambda ()
+      (setq-local electric-pair-inhibit-predicate
+              `(lambda (c)
+                 (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))))
   ;; 更丰富的 TODO 状态
   (setq org-todo-keywords
   (quote ((sequence "TODO(t)" "STARTED(s)" "|" "DONE(d!/!)")
-	  (sequence "WAITING(w@/!)" "SOMEDAY(S)" "|" "CANCELLED(c@/!)" "MEETING(m)" "PHONE(p)"))))
+      (sequence "WAITING(w@/!)" "SOMEDAY(S)" "|" "CANCELLED(c@/!)" "MEETING(m)" "PHONE(p)"))))
 
   ;; need repeat task and properties
   (setq org-log-done t)
@@ -59,8 +59,8 @@
      "pngpaste %s")))
   :bind
   (:map org-mode-map
-	(("C-M-y" . org-download-screenshot)
-	 ("s-y" . org-download-yank))))  
+    (("C-M-y" . org-download-screenshot)
+     ("s-y" . org-download-yank))))  
 
   ;; Drag-and-drop to `dired`
   (add-hook 'dired-mode-hook 'org-download-enable)
@@ -91,4 +91,56 @@
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))  
 
-  (provide 'init-org)
+;; org capture
+(global-set-key (kbd "C-c c") 'org-capture)
+(setq org-default-notes-file "~/org/inbox.org")
+;;先清空再设置
+(setq org-capture-templates nil)
+;;分组task
+(add-to-list 'org-capture-templates '("t" "Tasks"))
+(add-to-list 'org-capture-templates
+           '("tb" "Book Reading Task" entry
+             (file+olp "~/org/task.org" "Reading" "Book")
+             "* TODO %^{书名}\n%u\n" ))
+(add-to-list 'org-capture-templates
+           '("ta" "Article Reading Task" entry
+             (file+olp "~/org/task.org" "Reading" "Articles")
+             "* TODO %^{文章名}\n%u\n" ))
+(add-to-list 'org-capture-templates
+           '("tw" "Work Task" entry
+             (file+headline "~/org/task.org" "Work")
+             "* TODO %^{任务名}\n%u\n" ))
+(add-to-list 'org-capture-templates
+           '("tt" "Tech Task" entry
+             (file+headline "~/org/task.org" "Tech")
+             "* TODO %^{任务名}\n%u\n" ))
+(add-to-list 'org-capture-templates
+           '("j" "Journal" entry
+             (file "~/org/journal.org")
+             "* %U - %^{heading}\n  %?"))
+;;灵感搜集
+(add-to-list 'org-capture-templates
+           '("i" "Inbox" entry
+             (file "~/org/inbox.org")
+             "* %U - %^{heading} %^g\n %?\n"))
+;; note inbox
+(add-to-list 'org-capture-templates
+           '("n" "Notes" entry
+             (file "~/org/notes/inbox.org")
+             "* %^{heading} %<%Y-%m-%d> %^g\n  %?\n"))
+;;org日历
+(global-set-key "\C-ca" 'org-agenda)
+
+;; 中文英文混排的时候，自动换行问题
+;; emacs 28 最新解决方案
+(setq word-wrap-by-category t)
+
+;; 只显示标题
+(setq org-startup-folded 'content)
+;;将列表视为 heading 也可默认折叠
+(setq org-cycle-include-plain-lists 'integrate) 
+;; 模板出现了中文乱码
+(setq org-capture-templates-coding-system 'utf-8-unix)
+
+
+(provide 'init-org)

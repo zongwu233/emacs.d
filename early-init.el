@@ -40,6 +40,21 @@
 ;; larger than the system default.
 (setq frame-inhibit-implied-resize t)
 
+;; 优先使用 UTF-8
+;; 强制 Emacs 全局 UTF-8，包含写文件、创建新文件、capture 等
+(prefer-coding-system 'utf-8-unix)
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8-unix)
+(set-terminal-coding-system 'utf-8-unix)
+(set-keyboard-coding-system 'utf-8-unix)
+(set-selection-coding-system 'utf-8-unix)
+(set-buffer-file-coding-system 'utf-8-unix)
+(setq default-buffer-file-coding-system 'utf-8-unix)
+(setq coding-system-for-read 'utf-8-unix)
+(setq coding-system-for-write 'utf-8-unix)
+;; org-capture 模板内容编码
+(setq org-capture-templates-coding-system 'utf-8-unix)
+
 (provide 'early-init)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; early-init.el ends here
