@@ -1,4 +1,4 @@
-  ;; -*- coding: utf-8; lexical-binding: t; -*-
+;; -*- coding: utf-8; lexical-binding: t; -*-
 
   ;; open for debug error when you need.
   ;;(setq debug-on-error t)

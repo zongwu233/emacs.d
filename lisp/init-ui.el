@@ -1,4 +1,4 @@
-  ;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
 
   ;; install theme
   ;;(use-package gruvbox-theme :ensure t)
