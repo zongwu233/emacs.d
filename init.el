@@ -34,6 +34,7 @@
 (require 'init-git)
 (require 'init-python)  
 (require 'init-tools)
+(require 'init-md)
 
 (provide 'init)
 

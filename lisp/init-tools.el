@@ -5,6 +5,7 @@
   :ensure t
   :init (which-key-mode))
 
+;;使用快捷键，可以快速跳转到任意行，任意符号
 ;; Jump to arbitrary positions
 (use-package avy
   :ensure t
