@@ -1,12 +1,12 @@
 ;;; early-init.el --- Early initialization. -*- lexical-binding: t -*-
 
-;;; Commentary:
+  ;;; Commentary:
 ;;
 ;; Emacs 27 introduces early-init.el, which is run before init.el,
 ;; before package and UI initialization happens.
 ;;
 
-;;; Code:
+  ;;; Code:
 
 ;; Defer garbage collection further back in the startup process
 (setq gc-cons-threshold most-positive-fixnum
@@ -55,6 +55,8 @@
 ;; org-capture 模板内容编码
 (setq org-capture-templates-coding-system 'utf-8-unix)
 
+
+
 (provide 'early-init)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; early-init.el ends here
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;; early-init.el ends here
