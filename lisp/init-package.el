@@ -32,7 +32,7 @@
   (setq use-package-enable-imenu-support t))
 (eval-when-compile
   (require 'use-package))
-
+;; quelpa is a package manager, which can build and install emacs lisp package directly from source code 
 ;; Bootstrap `quelpa'.
 (use-package quelpa
   :ensure t

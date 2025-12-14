@@ -1,4 +1,5 @@
-;;安装最新版本 org 不使用内置版本
+;; -*- coding: utf-8; lexical-binding: t; -*- 
+   ;;安装最新版本 org 不使用内置版本
     (use-package org
       :pin gnu
       :ensure t)
@@ -54,17 +55,16 @@
                    (org-agenda-start-day "+1d") ;; 从明天开始7天
                    (org-agenda-overriding-header "\uF073 Next 7 Days")))
           ;; Work tasks (tag: work)
-          (tags-todo "work"
-                     ((org-agenda-overriding-header "\uF0B1 Work Tasks")))
-          (tags-todo "Life"
-                     ((org-agenda-overriding-header "\uF015 Life Tasks")))
+          (tags-todo "+CATEGORY=\"Work\""
+                     ((org-agenda-overriding-header "\uF0B1 Work")))
+          (tags-todo "+CATEGORY=\"Life\""
+                     ((org-agenda-overriding-header "\uF015 Life")))
           (todo "WAIT"
                 ((org-agenda-overriding-header "\uF044 Waiting / Blocked")))
           (todo ""
                 ((org-agenda-overriding-header "\uF005 Priority Sorted")
                  (org-agenda-sorting-strategy '(priority-down))))
           ))))
-
 
 
     ;; see https://github.com/abo-abo/org-download/issues/131
@@ -168,8 +168,6 @@
              '("n" "Notes" entry
                (file "~/org/notes/inbox.org")
                "* %^{heading} %t%^g\n %?\n"))
-  ;;org日历
-  (global-set-key "\C-ca" 'org-agenda)
 
   ;; 中文英文混排的时候，自动换行问题
   ;; emacs 28 最新解决方案
@@ -181,6 +179,5 @@
   (setq org-cycle-include-plain-lists 'integrate) 
   ;; 模板出现了中文乱码
   (setq org-capture-templates-coding-system 'utf-8-unix)
-
 
   (provide 'init-org)
