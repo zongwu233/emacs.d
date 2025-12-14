@@ -13,14 +13,14 @@
       (load-theme 'doom-one t)
       (doom-themes-org-config))
 
-    (use-package emacs
+  (use-package emacs
       :ensure nil
       :unless (display-graphic-p)
       :config
       (load-theme 'leuven t))
 
 
-   (use-package doom-modeline
+  (use-package doom-modeline
     :ensure t
     :hook (after-init . doom-modeline-mode)
     :custom
