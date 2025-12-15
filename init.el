@@ -1,7 +1,7 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
-  ;; open for debug error when you need.
-  ;;(setq debug-on-error t)
+;; open for debug error when you need.
+;;(setq debug-on-error t)
 
 ;; A big contributor to startup times is garbage collection. We up the gc
 ;; threshold to temporarily prevent it from running, and then reset it by the

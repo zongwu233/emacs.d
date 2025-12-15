@@ -1,3 +1,4 @@
+;; -*- coding: utf-8; lexical-binding: t; -*-
 ;; 默认竖直拆分窗口，Emcas 叫 horizontal split 
 (setq split-width-threshold 1 )
 ;;Enable window-numbering-mode and use M-1 through M-0 to navigate.

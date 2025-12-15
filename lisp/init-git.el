@@ -1,4 +1,4 @@
-;;; init-git.el  -*- lexical-binding: t -*-
+;; -*- coding: utf-8; lexical-binding: t; -*-
 ;; git-messenger has been superseded by {C-x v h} (`vc-region-history')
 ;;
 ;; Explicit binding makes it load lazily although it's the default.
