@@ -97,7 +97,6 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (load custom-file 'no-error 'no-message)  
  
-(require 'init-begin)
 (require 'init-package)
 (require 'init-evil)
 (require 'init-basic)
@@ -122,20 +121,6 @@ init.el 保持最小配置，其他功能都拆分到独立文件。
 ;;; init.el ends here
 
 #+END_SRC
-*** init-begin.el
-#+begin_src  emacs-lisp :tangle ~/.emacs.d/lisp/init-begin.el
-  ;; -*- coding: utf-8; lexical-binding: t; -*-
-
-  ;; hidden menu-bar tool-bar scroll-bar, not nil ,not negative, specially apply in client mode.
-
-  (push '(menu-bar-lines . 0) default-frame-alist)
-  (push '(tool-bar-lines . 0) default-frame-alist)
-  (push '(vertical-scroll-bars) default-frame-alist)
-
-  ;; full screen emacs
-  (toggle-frame-fullscreen)
-  (provide 'init-begin)
-#+end_src
 *** init-packages.el
 package 配置
 use-package 实际上是一个宏，更好的取代 require 的方式，该宏允许你以一种既面向性能又整洁的方式隔离文件中的包配置。
@@ -233,8 +218,14 @@ M->	Go to end of file
 把mac的几个常用操作配置到Emacs里面。
 
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-basic.el
-  ;; -*- lexical-binding: t -*-
+  ;; -*- coding: utf-8; lexical-binding: t; -*-
 
+  ;; hidden menu-bar tool-bar scroll-bar, not nil ,not negative, specially apply in client mode.
+  (push '(menu-bar-lines . 0) default-frame-alist)
+  (push '(tool-bar-lines . 0) default-frame-alist)
+  (push '(vertical-scroll-bars) default-frame-alist)
+  ;; full screen emacs
+  (toggle-frame-fullscreen)
 
   ;; Suppress GUI features and more
   (setq use-file-dialog nil

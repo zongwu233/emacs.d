@@ -16,7 +16,6 @@
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (load custom-file 'no-error 'no-message)  
  
-(require 'init-begin)
 (require 'init-package)
 (require 'init-evil)
 (require 'init-basic)
