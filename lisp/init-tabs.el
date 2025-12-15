@@ -1,3 +1,4 @@
+;; -*- coding: utf-8; lexical-binding: t; -*-
 ;; Windows layout recorder
 ;;
 ;; You can still use `winner-mode' on Emacs 26 or early. On Emacs 27, it's

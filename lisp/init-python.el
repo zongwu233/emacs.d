@@ -1,5 +1,4 @@
-;;; init-python.el  -*- lexical-binding: t -*-
-
+;; -*- coding: utf-8; lexical-binding: t; -*-
   ;; Python Mode
   ;; Install: pip install pyflakes autopep8
   (use-package python
