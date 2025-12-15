@@ -53,30 +53,25 @@
 ;; 更改显示字体大小 
 ;; 这里设置了英文字体（ASCII ）
 ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
-(set-face-attribute 'default nil :family "Hack Nerd Font Mono" :height 170);;
-
+(set-face-attribute 'default nil
+                  :family "Hack Nerd Font Mono"
+                  :height 170)
 ;;根据系统选择合适字体
+(defvar my-cjk-font
 (cond
- ((eq system-type 'windows-nt)
-  (setq my-cjk-font "Microsoft YaHei"))
- ((eq system-type 'darwin)
-  (setq my-cjk-font "PingFang SC"))
- ((eq system-type 'gnu/linux)
-  (setq my-cjk-font "Noto Sans CJK SC"))
- (t
-  (setq my-cjk-font "Microsoft YaHei"))) 
+ ((eq system-type 'windows-nt) "Microsoft YaHei")
+ ((eq system-type 'darwin)     "PingFang SC")
+ ((eq system-type 'gnu/linux)  "Noto Sans CJK SC")
+ (t                            "Microsoft YaHei")))
 
-;; 设置中文字体
-(dolist (charset '(kana han cjk-misc bopomofo))
-  (set-fontset-font t charset
-                    (font-spec :family my-cjk-font
-                               :height 17)))
+(dolist (charset '(han kana cjk-misc bopomofo))
+ (set-fontset-font t charset my-cjk-font))
 
-;;设置 emoji 或者特殊字符的字体
-(dolist (charset '(symbol emoji))
-  (set-fontset-font t charset
-                    (font-spec :family "Hack Nerd Font Mono"
-                               :height 17)))
+(setq face-font-rescale-alist
+    `((,my-cjk-font . 1.2)
+      ("Hack Nerd Font Mono" . 1.0)))
+
+(set-fontset-font t 'symbol "Hack Nerd Font Mono")
 
 ;;让鼠标滚动更好用
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
