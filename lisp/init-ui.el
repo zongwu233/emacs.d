@@ -67,9 +67,9 @@
                                         "GitHub" "Browse" (lambda (&rest _) (browse-url homepage-url)))
        (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-heart") "♥")
                                         "Stars" "Show stars" (lambda (&rest _) (browse-url stars-url)))
-       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-alert") "⚑")
+       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-alert") "\u2691")
                                         "Issue" "Report issue" (lambda (&rest _) (browse-url issue-url)) warning)
-       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-download") "♺")
+       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-download") "\u267A")
                                         "Upgrade" "Upgrade packages synchronously" 
                                            (lambda (&rest _) (package-upgrade-all nil)) success)))
   )
