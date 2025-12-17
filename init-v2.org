@@ -277,22 +277,22 @@ M->	Go to end of file
   ;; 这里设置了英文字体（ASCII ）
   ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
   (set-face-attribute 'default nil
-                    :family "Hack Nerd Font Mono"
-                    :height 170)
+                      :family "Hack Nerd Font Mono"
+                      :height 170)
   ;;根据系统选择合适字体
   (defvar my-cjk-font
-  (cond
-   ((eq system-type 'windows-nt) "Microsoft YaHei")
-   ((eq system-type 'darwin)     "PingFang SC")
-   ((eq system-type 'gnu/linux)  "Noto Sans CJK SC")
-   (t                            "Microsoft YaHei")))
-  
+    (cond
+     ((eq system-type 'windows-nt) "Microsoft YaHei")
+     ((eq system-type 'darwin)     "PingFang SC")
+     ((eq system-type 'gnu/linux)  "Noto Sans CJK SC")
+     (t                            "Microsoft YaHei")))
+
   (dolist (charset '(han kana cjk-misc bopomofo))
-   (set-fontset-font t charset my-cjk-font))
-  
+    (set-fontset-font t charset my-cjk-font))
+
   (setq face-font-rescale-alist
-      `((,my-cjk-font . 1.2)
-        ("Hack Nerd Font Mono" . 1.0)))
+        `((,my-cjk-font . 1.2)
+          ("Hack Nerd Font Mono" . 1.0)))
 
   (set-fontset-font t 'symbol "Hack Nerd Font Mono")
 
@@ -671,7 +671,7 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
 
 *** init-ui.el
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-ui.el
- ;; -*- coding: utf-8; lexical-binding: t; -*-
+  ;; -*- coding: utf-8; lexical-binding: t; -*-
 
   ;; install theme
   ;;(use-package gruvbox-theme :ensure t)
@@ -679,17 +679,17 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
 
   ;; Use default theme in terminals
   (use-package doom-themes
-      :ensure t
-      :when (display-graphic-p)
-      :config
-      (load-theme 'doom-one t)
-      (doom-themes-org-config))
+    :ensure t
+    :when (display-graphic-p)
+    :config
+    (load-theme 'doom-one t)
+    (doom-themes-org-config))
 
   (use-package emacs
-      :ensure nil
-      :unless (display-graphic-p)
-      :config
-      (load-theme 'leuven t))
+    :ensure nil
+    :unless (display-graphic-p)
+    :config
+    (load-theme 'leuven t))
 
 
   (use-package doom-modeline
@@ -705,62 +705,69 @@ consult-ripgrep 可以搜索当前目录下所有文件内容，而且给出一�
     (doom-modeline-enable-word-count nil))
 
   (use-package simple
-	:ensure nil
-	:hook (after-init . size-indication-mode)
-	:init
-	(progn
-	  (setq column-number-mode t)
-	  ))
+    :ensure nil
+    :hook (after-init . size-indication-mode)
+    :init
+    (progn
+      (setq column-number-mode t)
+      ))
 
   ;; M-x nerd-icons-install-fonts 安装必要的字体，否则有些字符不显示
   (use-package nerd-icons
-	:ensure t
-	;; :custom
-	;; The Nerd Font you want to use in GUI
-	;; "Symbols Nerd Font Mono" is the default and is recommended
-	;; but you can use any other Nerd Font if you want
-	;; (nerd-icons-font-family "Symbols Nerd Font Mono")
-	:when (display-graphic-p)
-	:demand t
-	)
+    :ensure t
+    ;; :custom
+    ;; The Nerd Font you want to use in GUI
+    ;; "Symbols Nerd Font Mono" is the default and is recommended
+    ;; but you can use any other Nerd Font if you want
+    ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+    :when (display-graphic-p)
+    :demand t
+    )
 
   (use-package visual-fill-column
-	:ensure t
-	:init
-	(add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
-	;; Configure fill width
-	(setq visual-fill-column-center-text t))
+    :ensure t
+    :init
+    (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
+    ;; Configure fill width
+    (setq visual-fill-column-center-text t))
 
-(use-package dashboard
-  :ensure t
-  :init
-  ;; Format: "(icon title help action face prefix suffix)"
-  (setq dashboard-navigator-buttons 
-    `(((,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-mark_github") "★")
-                                        "GitHub" "Browse" (lambda (&rest _) (browse-url homepage-url)))
-       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-heart") "♥")
-                                        "Stars" "Show stars" (lambda (&rest _) (browse-url stars-url)))
-       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-alert") "\u2691")
-                                        "Issue" "Report issue" (lambda (&rest _) (browse-url issue-url)) warning)
-       (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-download") "\u267A")
-                                        "Upgrade" "Upgrade packages synchronously" 
-                                           (lambda (&rest _) (package-upgrade-all nil)) success)))
-  )
-  
-  (dashboard-setup-startup-hook)
-  :config
-  (defconst homepage-url "https://github.com/zongwu233/emacs.d.v2")
-  (defconst stars-url (concat homepage-url "/stargazers"))
-  (defconst issue-url (concat homepage-url "/issues/new"))
-  :custom
-  (dashboard-startup-banner 'logo)
-  (dashboard-set-heading-icons t)
-  (dashboard-set-file-icons t)
-  (dashboard-set-init-info t)
-  (dashboard-set-navigator t)
-  (dashboard-items '((recents   . 10)
-                     (projects  . 7))))
- 
+  (use-package dashboard
+    :ensure t
+    :init
+    ;; Format: "(icon title help action face prefix suffix)"
+    (setq dashboard-navigator-buttons 
+          `(((,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-mark_github") "★")
+              "GitHub" "Browse" (lambda (&rest _) (browse-url homepage-url)))
+             (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-heart") "♥")
+              "Stars" "Show stars" (lambda (&rest _) (browse-url stars-url)))
+             (,(if (fboundp 'nerd-icons-octicon) (nerd-icons-octicon "nf-oct-alert") "\u2691")
+              "Issue" "Report issue" (lambda (&rest _) (browse-url issue-url)) warning)
+             ))
+          )
+
+    (dashboard-setup-startup-hook)
+    :config
+    (defconst homepage-url "https://github.com/zongwu233/zongwu233.github.io")
+    (defconst stars-url (concat homepage-url "/stargazers"))
+    (defconst issue-url (concat homepage-url "/issues/new"))
+    :custom
+    (dashboard-startup-banner 'logo)
+    (dashboard-set-heading-icons t)
+    (dashboard-set-file-icons t)
+    (dashboard-set-init-info t)
+    (dashboard-items '((recents   . 10)
+                       (projects  . 7)))
+    (dashboard-startupify-list '(dashboard-insert-banner
+                               dashboard-insert-newline
+                               dashboard-insert-banner-title
+                               dashboard-insert-newline
+                               dashboard-insert-navigator
+                               dashboard-insert-newline
+                               dashboard-insert-init-info
+                               dashboard-insert-items
+                               dashboard-insert-newline
+                               dashboard-insert-footer)))
+
 
   (provide 'init-ui)
 
