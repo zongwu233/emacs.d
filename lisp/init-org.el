@@ -111,14 +111,17 @@
     :hook (org-mode . org-superstar-mode)
     :config
     (setq org-superstar-special-todo-items t))
+  ;; 
   (use-package evil-org
     :ensure t
-    :hook (org-mode . evil-org-mode)
+    ;; 这里会使得 org mode 文件进入 evil-emacs-state ，就是原生 emacs 模式
+    :hook (org-mode . evil-org-mode) 
     :after org
     :config
     (setq evil-want-C-i-jump nil)
     (require 'evil-org-agenda)
-    (evil-org-agenda-set-keys)) 
+    (evil-org-agenda-set-keys))
+ 
 ;;禁止 orgmode 换行自动缩进
  (setq org-adapt-indentation nil)
 ;; org mode evil 不要自动缩进

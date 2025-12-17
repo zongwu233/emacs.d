@@ -10,15 +10,22 @@
   ;; C-i 导致 orgmode 的 src 文件输入回车的时候，src 内容自动缩进了， orgmode 的C-i 就是缩进。
   ;;https://jeffkreeftmeijer.com/emacs-evil-org-tab/
   (setq evil-want-C-i-jump nil)
-  (evil-mode)
 
+  (evil-mode 1)
   ;; https://emacs.stackexchange.com/questions/46371/how-can-i-get-ret-to-follow-org-mode-links-when-using-evil-mode
   (with-eval-after-load 'evil-maps
     (define-key evil-motion-state-map (kbd "RET") nil))
+  ;;允许 orgmode 临时进入 evil  normal state
+ (with-eval-after-load 'evil
+    (add-hook 'org-mode-hook
+          (lambda ()
+            (evil-define-key 'emacs org-mode-map
+              (kbd "C-c n") #'evil-normal-state))))
 
   ;; insert state 不使用 vi keybinding
   (setcdr evil-insert-state-map nil)
-  (define-key evil-insert-state-map [escape] 'evil-normal-state)
+  (define-key evil-insert-state-map [escape] #'evil-normal-state)
+  (define-key evil-visual-state-map [escape] #'evil-normal-state)
 
   (define-key evil-normal-state-map (kbd "[ SPC") (lambda () (interactive) (evil-insert-newline-above) (forward-line)))
   (define-key evil-normal-state-map (kbd "] SPC") (lambda () (interactive) (evil-insert-newline-below) (forward-line -1)))
