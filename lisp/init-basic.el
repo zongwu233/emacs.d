@@ -54,22 +54,22 @@
 ;; 这里设置了英文字体（ASCII ）
 ;; http://stackoverflow.com/questions/294664/how-to-set-the-font-size-in-emacs
 (set-face-attribute 'default nil
-                  :family "Hack Nerd Font Mono"
-                  :height 170)
+                    :family "Hack Nerd Font Mono"
+                    :height 170)
 ;;根据系统选择合适字体
 (defvar my-cjk-font
-(cond
- ((eq system-type 'windows-nt) "Microsoft YaHei")
- ((eq system-type 'darwin)     "PingFang SC")
- ((eq system-type 'gnu/linux)  "Noto Sans CJK SC")
- (t                            "Microsoft YaHei")))
+  (cond
+   ((eq system-type 'windows-nt) "Microsoft YaHei")
+   ((eq system-type 'darwin)     "PingFang SC")
+   ((eq system-type 'gnu/linux)  "Noto Sans CJK SC")
+   (t                            "Microsoft YaHei")))
 
 (dolist (charset '(han kana cjk-misc bopomofo))
- (set-fontset-font t charset my-cjk-font))
+  (set-fontset-font t charset my-cjk-font))
 
 (setq face-font-rescale-alist
-    `((,my-cjk-font . 1.2)
-      ("Hack Nerd Font Mono" . 1.0)))
+      `((,my-cjk-font . 1.2)
+        ("Hack Nerd Font Mono" . 1.0)))
 
 (set-fontset-font t 'symbol "Hack Nerd Font Mono")
 
