@@ -140,23 +140,23 @@
   (add-to-list 'org-capture-templates
              '("tb" "Book Reading Task" entry
                (file+olp "~/org/task.org" "Reading" "Book")
-               "* TODO %^{书名}\n%t\n" ))
+               "* TODO %^{书名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("ta" "Article Reading Task" entry
                (file+olp "~/org/task.org" "Reading" "Articles")
-               "* TODO %^{文章名}\n%t\n" ))
+               "* TODO %^{文章名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("tw" "Work Task" entry
                (file+headline "~/org/task.org" "Work")
-               "* TODO %^{任务名}\n%t\n" ))
+               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("tt" "Tech Task" entry
                (file+headline "~/org/task.org" "Tech")
-               "* TODO %^{任务名}\n%t\n" ))
+               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("tl" "Life Task" entry
                (file+headline "~/org/task.org" "Life")
-               "* TODO %^{任务名}\n%t\n" ))
+               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("j" "Journal" entry
                (file "~/org/journal.org")
@@ -171,6 +171,60 @@
              '("n" "Notes" entry
                (file "~/org/notes/inbox.org")
                "* %^{heading} %t%^g\n %?\n"))
+
+(defun my/org--after-meta ()
+  "Return a safe point after planning / meta data under the current heading.
+Always returns a valid point. Compatible with older Org versions."
+  (
+    (org-back-to-heading t)
+    (forward-line 1)
+    ;; Prefer Org's meta-data API if available, otherwise fall back
+    (or (and (fboundp 'org-end-of-meta-data)
+             (org-end-of-meta-data t))
+        ;; Fallback: directly after the heading
+        (point))))
+
+(defun my/org-insert-checkbox-item ()
+  "Insert an Org checkbox item, ensuring proper structural separation."
+  (interactive)
+  (cond
+   ;; Case 1: already inside a list ->  just insert a new item
+   ((org-at-item-p)
+    (org-insert-item)
+    (insert "[ ] "))
+   ;; Case 2: not in a list -> create a new checklist block
+   (t
+    (progn
+      ;; Go to current headline
+      (org-back-to-heading t)
+      (forward-line 1)
+      ;; Skip planning lines (SCHEDULED, DEADLINE, CLOSED)
+      (while (looking-at-p org-planning-line-re)
+        (forward-line 1))
+      ;; Skip property drawer if present
+      (when (looking-at-p ":PROPERTIES:")
+        (re-search-forward ":END:" nil t)
+        (forward-line 1))
+      ;; Ensure blank line before checklist
+      (unless (looking-at-p "^$")
+        (insert "\n"))
+      ;; Insert checklist item,and move cursor
+      ;; CRITICAL: ensure blank line after checklist
+      ;; so the next headline is not treated as list continuation
+      (progn
+        (insert "- [ ] \n")
+        (insert "\n")
+        (forward-line -2)
+        (end-of-line))
+     ))))
+
+
+
+
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c C-x i")
+    #'my/org-insert-checkbox-item))
+
 
   ;; 中文英文混排的时候，自动换行问题
   ;; emacs 28 最新解决方案
