@@ -171,6 +171,16 @@
              '("n" "Notes" entry
                (file "~/org/notes/inbox.org")
                "* %^{heading} %t%^g\n %?\n"))
+;; orgmode todo 的归档规则
+(setq org-archive-location "~/org/archive/%s_archive::")
+(defun my/org-archive-done-tasks ()
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (outline-previous-heading)))
+   "/DONE" 'agenda))
+(global-set-key (kbd "C-c C-x C-d") 'my/org-archive-done-tasks)
 
 (defun my/org--after-meta ()
   "Return a safe point after planning / meta data under the current heading.
@@ -205,9 +215,11 @@ Always returns a valid point. Compatible with older Org versions."
       (when (looking-at-p ":PROPERTIES:")
         (re-search-forward ":END:" nil t)
         (forward-line 1))
-      ;; Ensure blank line before checklist
-      (unless (looking-at-p "^$")
-        (insert "\n"))
+
+      ;; Ensure blank line before checklist ,disable now
+      ;;(unless (looking-at-p "^$")
+      ;;  (insert "\n"))
+
       ;; Insert checklist item,and move cursor
       ;; CRITICAL: ensure blank line after checklist
       ;; so the next headline is not treated as list continuation
