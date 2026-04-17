@@ -181,7 +181,7 @@
      (org-archive-subtree)
      (setq org-map-continue-from (outline-previous-heading)))
    "/DONE|CANCELLED" 'agenda))
-(global-set-key (kbd "C-c C-x C-d") 'my/org-archive-done-tasks)
+(global-set-key (kbd "C-c d") 'my/org-archive-done-tasks)
 
 (defun my/org--after-meta ()
   "Return a safe point after planning / meta data under the current heading.
