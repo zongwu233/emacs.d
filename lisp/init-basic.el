@@ -43,6 +43,7 @@
 ;;不再需要，下面有更好的补全插件
 ;;(icomplete-mode 1)
 
+
 ;; 快速打开配置文件
 (defun open-init-file()
   (interactive)
@@ -199,6 +200,15 @@
   ;:when (eq system-type 'darwin)
   :unless (eq system-type 'windows-nt)
   :hook (after-init . exec-path-from-shell-initialize))
+
+;; 修复windows环境下，HOME的路径导致的git找不到配置的问题
+;; 根本原因是 win环境下的 HOME 应该是 C:\Users\{username} 
+;; 但是设置到了 C:\Users\{username}\AppData\Roaming 
+;; 虽然 ~/.emacs.d/ 的解析正确了，但是导致git 执行错误
+(when (eq system-type 'windows-nt)
+  (setenv "GIT_CONFIG_GLOBAL"
+    (expand-file-name ".gitconfig" (getenv "USERPROFILE")))
+  (setenv "GIT_SSH" "C:/Windows/System32/OpenSSH/ssh.exe"))
 
 ;; 重启命令
 (use-package restart-emacs
