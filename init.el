@@ -19,6 +19,7 @@
 (require 'init-package)
 (require 'init-evil)
 (require 'init-basic)
+(require 'init-leader-key)
 (require 'init-completion)
 ;;使用内置的 tab-bar 在 init-window 配置 
 ;(require 'init-awesome-tab)
