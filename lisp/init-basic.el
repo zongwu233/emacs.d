@@ -193,10 +193,11 @@
                                               extended-command-history)
               savehist-autosave-interval 300))
 
-;; MacOS specific
+;; macOS, Linux load path variable 
 (use-package exec-path-from-shell
   :ensure t
-  :when (eq system-type 'darwin)
+  ;:when (eq system-type 'darwin)
+  :unless (eq system-type 'windows-nt)
   :hook (after-init . exec-path-from-shell-initialize))
 
 ;; 重启命令
