@@ -173,13 +173,14 @@
                "* %^{heading} %t%^g\n %?\n"))
 ;; orgmode todo 的归档规则
 (setq org-archive-location "~/org/archive/%s_archive::")
+;;在 todo 的 buffer 执行归档操作不会生效，在其他 buffer 即可
 (defun my/org-archive-done-tasks ()
   (interactive)
   (org-map-entries
    (lambda ()
      (org-archive-subtree)
      (setq org-map-continue-from (outline-previous-heading)))
-   "/DONE" 'agenda))
+   "/DONE|CANCELLED" 'agenda))
 (global-set-key (kbd "C-c C-x C-d") 'my/org-archive-done-tasks)
 
 (defun my/org--after-meta ()
