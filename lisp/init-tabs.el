@@ -32,9 +32,9 @@
   :config
   ;; Filter Buffers for Consult-Buffer
 
-  (with-eval-after-load 'consult
-    ;; set consult-workspace buffer list
-    (defvar consult--source-workspace
+    (with-eval-after-load 'consult
+  ;; set consult-workspace buffer list
+  (defvar consult--source-workspace
   (list :name "Workspace Buffers"
 	    :narrow ?w
 	    :history 'buffer-name-history

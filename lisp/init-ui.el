@@ -74,9 +74,9 @@
 
   (dashboard-setup-startup-hook)
   :config
-    (defconst homepage-url "https://github.com/zongwu233/emacs.d")
-    (defconst stars-url (concat homepage-url "/stargazers"))
-    (defconst issue-url (concat homepage-url "/issues/new"))
+  (defconst homepage-url "https://github.com/zongwu233/emacs.d")
+  (defconst stars-url (concat homepage-url "/stargazers"))
+  (defconst issue-url (concat homepage-url "/issues/new"))
   :custom
   (dashboard-startup-banner 'logo)
   (dashboard-set-heading-icons t)

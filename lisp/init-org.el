@@ -45,6 +45,7 @@
     ;; ============================================================================
    (setq org-agenda-custom-commands
       '(
+        ;; d: 统一 Dashboard，三个分类按文件过滤
         ("d" "Dashboard"
          (
           (agenda ""
@@ -54,17 +55,31 @@
                   ((org-agenda-span 7)
                    (org-agenda-start-day "+1d") ;; 从明天开始7天
                    (org-agenda-overriding-header "\uF073 Next 7 Days")))
-          ;; Work tasks (tag: work)
-          (tags-todo "+CATEGORY=\"Work\""
-                     ((org-agenda-overriding-header "\uF0B1 Work")))
-          (tags-todo "+CATEGORY=\"Life\""
-                     ((org-agenda-overriding-header "\uF015 Life")))
-          (todo "WAIT"
+          ;; Work tasks — 限制到 ~/org/work.org
+          (alltodo ""
+                   ((org-agenda-overriding-header "\uF0B1 Work")
+                    (org-agenda-files '("~/org/work.org"))))
+          ;; Life tasks — 限制到 ~/org/life.org
+          (alltodo ""
+                   ((org-agenda-overriding-header "\uF015 Life")
+                    (org-agenda-files '("~/org/life.org"))))
+          ;; Reading tasks — 限制到 ~/org/reading.org
+          (alltodo ""
+                   ((org-agenda-overriding-header "\uF02D Reading")
+                    (org-agenda-files '("~/org/reading.org"))))
+          ;; Waiting / Blocked — 跨所有文件
+          (todo "WAITING"
                 ((org-agenda-overriding-header "\uF044 Waiting / Blocked")))
+          ;; Priority Sorted — 跨所有文件
           (todo ""
                 ((org-agenda-overriding-header "\uF005 Priority Sorted")
                  (org-agenda-sorting-strategy '(priority-down))))
-          ))))
+          ))
+        ;; 单分类视图：C-c a W / L / R
+        ("W" "Work only"    agenda "" ((org-agenda-files '("~/org/work.org"))))
+        ("L" "Life only"    agenda "" ((org-agenda-files '("~/org/life.org"))))
+        ("R" "Reading only" agenda "" ((org-agenda-files '("~/org/reading.org"))))
+        ))
 
 
     ;; see https://github.com/abo-abo/org-download/issues/131
@@ -135,28 +150,25 @@
   (setq org-default-notes-file "~/org/inbox.org")
   ;;先清空再设置
   (setq org-capture-templates nil)
-  ;;分组task
-  (add-to-list 'org-capture-templates '("t" "Tasks"))
+  ;; === 工作 ===
   (add-to-list 'org-capture-templates
-             '("tb" "Book Reading Task" entry
-               (file+olp "~/org/task.org" "Reading" "Book")
+             '("w" "Work Task" entry
+               (file+headline "~/org/work.org" "Inbox")
+               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
+  ;; === 生活 ===
+  (add-to-list 'org-capture-templates
+             '("l" "Life Task" entry
+               (file+headline "~/org/life.org" "Inbox")
+               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
+  ;; === 阅读（保留 Book / Articles 细分）===
+  (add-to-list 'org-capture-templates
+             '("rb" "Book Reading Task" entry
+               (file+olp "~/org/reading.org" "Reading" "Book")
                "* TODO %^{书名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
-             '("ta" "Article Reading Task" entry
-               (file+olp "~/org/task.org" "Reading" "Articles")
+             '("ra" "Article Reading Task" entry
+               (file+olp "~/org/reading.org" "Reading" "Articles")
                "* TODO %^{文章名}\n  SCHEDULED: %t\n" ))
-  (add-to-list 'org-capture-templates
-             '("tw" "Work Task" entry
-               (file+headline "~/org/task.org" "Work")
-               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
-  (add-to-list 'org-capture-templates
-             '("tt" "Tech Task" entry
-               (file+headline "~/org/task.org" "Tech")
-               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
-  (add-to-list 'org-capture-templates
-             '("tl" "Life Task" entry
-               (file+headline "~/org/task.org" "Life")
-               "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("j" "Journal" entry
                (file "~/org/journal.org")
