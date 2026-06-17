@@ -157,12 +157,9 @@ quelpa 支持从源码方式安装 package。
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
 (require 'package)
-    (setq package-archives '(("gnu"   . "https://mirrors.163.com/elpa/gnu/")
-			     ("melpa" . "https://mirrors.163.com/elpa/melpa/")))
-    ;; add nongnu resource
-    (add-to-list 'package-archives
-		 (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
-					(if (gnutls-available-p) "s" ""))))
+    (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                             ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                             ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 (package-initialize)
 
 
