@@ -160,15 +160,11 @@
              '("l" "Life Task" entry
                (file+headline "~/org/life.org" "Inbox")
                "* TODO %^{任务名}\n  SCHEDULED: %t\n" ))
-  ;; === 阅读（保留 Book / Articles 细分）===
+  ;; === 阅读 ===
   (add-to-list 'org-capture-templates
-             '("rb" "Book Reading Task" entry
-               (file+olp "~/org/reading.org" "Reading" "Book")
-               "* TODO %^{书名}\n  SCHEDULED: %t\n" ))
-  (add-to-list 'org-capture-templates
-             '("ra" "Article Reading Task" entry
-               (file+olp "~/org/reading.org" "Reading" "Articles")
-               "* TODO %^{文章名}\n  SCHEDULED: %t\n" ))
+             '("r" "Reading Task" entry
+               (file+headline "~/org/reading.org" "Inbox")
+               "* TODO %^{书名 or 文章名}\n  SCHEDULED: %t\n" ))
   (add-to-list 'org-capture-templates
              '("j" "Journal" entry
                (file "~/org/journal.org")
