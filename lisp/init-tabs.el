@@ -33,8 +33,6 @@
   ;; Filter Buffers for Consult-Buffer
 
   (with-eval-after-load 'consult
-    ;; hide full buffer list (still available with "b" prefix)
-    (consult-customize consult--source-buffer :hidden nil :default nil)
     ;; set consult-workspace buffer list
     (defvar consult--source-workspace
   (list :name "Workspace Buffers"
