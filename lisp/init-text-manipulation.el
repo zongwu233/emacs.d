@@ -4,15 +4,15 @@
 (defun my/search-project-for-symbol-at-point ()
   (interactive)
   (if (use-region-p)
-  (progn
+      (progn
 	(consult-ripgrep (project-root (project-current))
 			   (buffer-substring (region-beginning) (region-end))))))
 
 (defun my/evil-quick-replace (beg end )
   (interactive "r")
   (when (evil-visual-state-p)
-  (evil-exit-visual-state)
-  (let ((selection (regexp-quote (buffer-substring-no-properties beg end))))
+      (evil-exit-visual-state)
+      (let ((selection (regexp-quote (buffer-substring-no-properties beg end))))
 	(setq command-string (format "%%s /%s//g" selection))
 	(minibuffer-with-setup-hook
 	    (lambda () (backward-char 2))
@@ -26,9 +26,9 @@
   :bind ("C-=" . er/expand-region)
   :config
   (defadvice er/prepare-for-more-expansions-internal
-  (around helm-ag/prepare-for-more-expansions-internal activate)
-  ad-do-it
-  (let ((new-msg (concat (car ad-return-value)
+      (around helm-ag/prepare-for-more-expansions-internal activate)
+      ad-do-it
+      (let ((new-msg (concat (car ad-return-value)
 			     ", H to highlight in buffers"
 			     ", / to search in project, "
 			     "e iedit mode in functions, "
@@ -88,11 +88,11 @@
     :quelpa (highlight-global :fetcher github :repo "glen-dai/highlight-global")
     :config
     (progn
-  (setq-default highlight-faces
+      (setq-default highlight-faces
 		    '(('hi-red-b . 0)
-		  ('hi-aquamarine . 0)
-		  ('hi-pink . 0)
-		  ('hi-blue-b . 0)))))
+		      ('hi-aquamarine . 0)
+		      ('hi-pink . 0)
+		      ('hi-blue-b . 0)))))
 (defun my/clear-highlight ()
   (interactive)
   (clear-highlight-frame) ;; highlight-global function
