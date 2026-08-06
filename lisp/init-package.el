@@ -29,7 +29,26 @@
   (setq use-package-enable-imenu-support t))
 (eval-when-compile
   (require 'use-package))
-;; quelpa is a package manager, which can build and install emacs lisp package directly from source code 
+
+;; 按需刷新 package archive-contents：当 use-package :ensure 检测到「包未装」时，
+;; 本会话首次自动 refresh 一次。已装的包走 fast path 无开销；同一会话多个新包只刷一次。
+;; 解决：archive-contents 落盘后不再自动刷新，MELPA 轮到新版本号、旧版本号 404 的问题。
+(defvar my/package-refreshed-this-session nil
+  "本会话是否已触发过 `package-refresh-contents'。")
+
+(defun my/use-package-refresh-on-missing (orig-fn name &rest args)
+  "Advice around `use-package-ensure-elpa'.
+NAME 未装且本会话尚未刷新过 archive → 先刷新一次再交给 ORIG-FN。"
+  (unless (or (package-installed-p name)
+              my/package-refreshed-this-session)
+    (setq my/package-refreshed-this-session t)
+    (package-refresh-contents))
+  (apply orig-fn name args))
+
+(advice-add 'use-package-ensure-elpa :around
+            #'my/use-package-refresh-on-missing)
+
+;; quelpa is a package manager, which can build and install emacs lisp package directly from source code
 ;; Bootstrap `quelpa'.
 (use-package quelpa
   :ensure t
