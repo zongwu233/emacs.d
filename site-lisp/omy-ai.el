@@ -38,13 +38,28 @@
   (let* ((dir (expand-file-name (omy-ai--project-slug) omy-ai-sessions-dir))
          (stamp (format-time-string "%Y%m%d-%H%M%S"))
          (base (format "%s-agent" stamp))
-         (path (expand-file-name (concat base ".md") dir))
+         (path (expand-file-name (concat base ".org") dir))
          (n 2))
     (make-directory dir t)
     (while (file-exists-p path)
-      (setq path (expand-file-name (format "%s-%d.md" base n) dir)
+      (setq path (expand-file-name (format "%s-%d.org" base n) dir)
             n (1+ n)))
     path))
+
+(defun omy-ai--maybe-restore-agent-session ()
+  "Re-enter `gptel-mode' when visiting a saved agent session file.
+Saved agent buffers reopen as plain files: visiting a markdown one triggers
+init-md's `visual-line-mode', whose hook pulls in `visual-fill-column-mode',
+squeezing the text into a narrow centered column.  Re-entering `gptel-mode'
+reapplies the chat UI polish and restores the recorded session state; for Org
+sessions that includes header properties and conversation turn boundaries."
+  (when (and buffer-file-name
+             (derived-mode-p 'org-mode 'markdown-mode 'text-mode)
+             (string-prefix-p omy-ai-sessions-dir buffer-file-name)
+             (string-match-p "-agent\\(?:-[0-9]+\\)?\\.\\(?:md\\|org\\)\\'" buffer-file-name))
+    (gptel-mode 1)))
+
+(add-hook 'find-file-hook #'omy-ai--maybe-restore-agent-session)
 
 (defun omy-ai-session-new (&optional title)
   "Create and open a new gptel session file for the current project."

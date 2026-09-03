@@ -78,6 +78,11 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   :ensure t
   :demand t
   :config
+  ;; Unify all gptel buffers on Org: session files become fully restorable -
+  ;; `gptel--save-state' writes header properties AND turn boundaries for Org
+  ;; buffers (markdown only gets a trailing Local Variables comment block, and
+  ;; its `'gptel' text-property turn markers are lost on save).
+  (setq gptel-default-mode 'org-mode)
   (add-to-list 'gptel-agent-dirs (expand-file-name "agents" user-emacs-directory))
   (gptel-agent-update))
 
@@ -172,7 +177,7 @@ headings and the native Org / org-superstar look."
 
 (general-def :keymaps '+general-global-ai-map "i" 'omy-ai-complete)
 (general-def :keymaps '+general-global-ai-map "C" 'omy-ai-compact)
-(defconst omy-ai-version "0.6-agentui"
+(defconst omy-ai-version "0.7-agentorg"
   "Config version probe: after restarting Emacs, M-: omy-ai-version should show this value.")
 
 (provide 'init-ai)
