@@ -15,7 +15,7 @@
   (haskell-mode . interactive-haskell-mode)   ; 启用 cabal REPL 集成
   (haskell-mode . haskell-indentation-mode)   ; 智能缩进（haskell-mode 自带）
   (haskell-mode . haskell-decl-scan-mode)     ; imenu 函数/类型列表
-  (haskell-mode . my-haskell-eglot-ensure)     ; HLS 存在时才启动（见 :config）
+  (haskell-mode . my-haskell-eglot-ensure)    ; HLS 存在时才启动（见 :config）
   :custom
   ;; 用 cabal 构建
   (haskell-compile-cabal-build-command "cabal build --ghc-options=-ferror-reports")

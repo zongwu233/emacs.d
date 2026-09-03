@@ -36,6 +36,7 @@
 (require 'init-haskell)
 (require 'init-tools)
 (require 'init-md)
+(require 'init-ai)
 
 (provide 'init)
 
