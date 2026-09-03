@@ -113,7 +113,13 @@ Outside a repository: retain gptel-agent's default per-call confirmation and sho
          (rules (omy-ai--rules-path root)))
     (unless in-git
       (message "omy-ai: not inside a git repository, write-class tools keep per-call confirmation"))
-    (let ((default-directory root))
+    (let ((default-directory root)
+          ;; gptel delegates chat-buffer display to the global display-buffer
+          ;; machinery (its own action alist carries no display function), so the
+          ;; session lands wherever that machinery sends it: a split window by
+          ;; default, a separate frame when `pop-up-frames' is non-nil.  Pin the
+          ;; agent session to the current window instead, mirroring `find-file'.
+          (gptel-display-buffer-action '(display-buffer-same-window)))
       (gptel-agent root preset))
     (let ((buf (or (and (bound-and-true-p gptel-mode) (current-buffer))
                    (seq-find (lambda (b) (buffer-local-value 'gptel-mode b))
