@@ -33,6 +33,19 @@
     (make-directory dir t)
     (expand-file-name (format "%s-%s.org" stamp safe) dir)))
 
+(defun omy-ai--agent-session-file ()
+  "File path for a new agent session of the current project (creates the directory when missing)."
+  (let* ((dir (expand-file-name (omy-ai--project-slug) omy-ai-sessions-dir))
+         (stamp (format-time-string "%Y%m%d-%H%M%S"))
+         (base (format "%s-agent" stamp))
+         (path (expand-file-name (concat base ".md") dir))
+         (n 2))
+    (make-directory dir t)
+    (while (file-exists-p path)
+      (setq path (expand-file-name (format "%s-%d.md" base n) dir)
+            n (1+ n)))
+    path))
+
 (defun omy-ai-session-new (&optional title)
   "Create and open a new gptel session file for the current project."
   (interactive "sSession title (RET for default): ")
@@ -127,7 +140,16 @@ Outside a repository: retain gptel-agent's default per-call confirmation and sho
       (if buf
           (with-current-buffer buf
             (when in-git (setq-local gptel-confirm-tool-calls nil))
-            (when rules (setq-local gptel-context (list (list rules)))))
+            (when rules (setq-local gptel-context (list (list rules))))
+            ;; agent session buffers are nameless "*gptel-agent:*" buffers: without a
+            ;; visited file save-buffer prompts for a directory and file name.  Bind a
+            ;; session file directly - `set-visited-file-name' would rename the buffer
+            ;; away from its "*gptel-agent:*" name - so saving is a plain keypress,
+            ;; like org chat sessions.
+            (unless (buffer-file-name)
+              (let ((path (omy-ai--agent-session-file)))
+                (setq buffer-file-name path
+                      buffer-file-truename (abbreviate-file-name (file-truename path))))))
         (message "omy-ai: agent session buffer not found, confirmation policy left unchanged")))))
 
 (defun omy-ai-agent ()

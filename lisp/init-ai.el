@@ -112,26 +112,27 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
 
 (defun omy-ai--chat-ui ()
   "Buffer-local polish for gptel chat buffers: proportional font, soft wrapping,
-dimmed code-block delimiter lines. Only org buffers are affected - gptel-agent
-session buffers are not org-mode and are left alone.
+full-width text and streaming auto-scroll in every gptel buffer - org chat
+sessions and gptel-agent session buffers alike.  Org sessions additionally get
+dimmed code-block delimiter lines.
 Does not take over heading rendering: keeps gptel's \"*** \" user prompt
 headings and the native Org / org-superstar look."
+  (variable-pitch-mode 1)
+  (visual-line-mode 1)
+  ;; visual-fill-column-mode is hooked globally on visual-line-mode-hook (init-ui's
+  ;; Org reading layout), squeezing wrapped lines into fill-column and maybe centering;
+  ;; the chat window should span the full visual width, so explicitly turn off the
+  ;; mode that this hook pulls in
+  (when (bound-and-true-p visual-fill-column-mode)
+    (visual-fill-column-mode -1))
+  (when (fboundp 'company-mode) (company-mode -1))
+  ;; streaming insertion follows the visible window; once the response is written,
+  ;; expand this reply's reasoning blocks and bring the window to point-max, with
+  ;; point landing on gptel's next prompt
+  (add-hook 'gptel-post-stream-hook #'omy-ai--follow-stream nil t)
+  (add-hook 'gptel-post-response-functions #'omy-ai--complete-response nil t)
   (when (derived-mode-p 'org-mode)
     (setq-local gptel-org-convert-response nil) ;keep AI output as native markdown
-    (variable-pitch-mode 1)
-    (visual-line-mode 1)
-    ;; visual-fill-column-mode is hooked globally on visual-line-mode-hook (init-ui's
-    ;; Org reading layout), squeezing wrapped lines into fill-column and maybe centering;
-    ;; the chat window should span the full visual width, so explicitly turn off the
-    ;; mode that this hook pulls in
-    (when (bound-and-true-p visual-fill-column-mode)
-      (visual-fill-column-mode -1))
-    (when (fboundp 'company-mode) (company-mode -1))
-    ;; streaming insertion follows the visible window; once the response is written,
-    ;; expand this reply's reasoning blocks and bring the window to point-max, with
-    ;; point landing on gptel's next prompt
-    (add-hook 'gptel-post-stream-hook #'omy-ai--follow-stream nil t)
-    (add-hook 'gptel-post-response-functions #'omy-ai--complete-response nil t)
     (let ((small-height (round (* 0.8 (face-attribute 'default :height)))))
       (face-remap-add-relative 'org-block-begin-line
                                :height small-height :foreground "gray50")
@@ -171,7 +172,7 @@ headings and the native Org / org-superstar look."
 
 (general-def :keymaps '+general-global-ai-map "i" 'omy-ai-complete)
 (general-def :keymaps '+general-global-ai-map "C" 'omy-ai-compact)
-(defconst omy-ai-version "0.5-winfix"
+(defconst omy-ai-version "0.6-agentui"
   "Config version probe: after restarting Emacs, M-: omy-ai-version should show this value.")
 
 (provide 'init-ai)
