@@ -158,6 +158,7 @@ headings and the native Org / org-superstar look."
   "S" 'omy-ai-session-open)
 (general-def :keymaps '+general-global-ai-map "a" 'omy-ai-agent)
 (general-def :keymaps '+general-global-ai-map
+  "p" 'omy-ai-plan
   "c" 'omy-ai-commit
   "r" 'omy-ai-review
   "e" 'omy-ai-explain

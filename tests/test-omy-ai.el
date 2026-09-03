@@ -104,6 +104,43 @@
               (when (window-live-p w) (ignore-errors (delete-window w))))
             (kill-buffer b)))))))
 
+(ert-deftest omy-ai/plan-command-uses-plan-preset ()
+  (let* ((repo (file-name-as-directory (make-temp-file "planrepo" t)))
+         (default-directory repo))
+    (call-process "git" nil nil nil "init")
+    (write-region "# rules\n" nil (expand-file-name "AGENTS.md" repo))
+    (let ((expected (expand-file-name "AGENTS.md" (omy-ai--project-root))))
+      (unwind-protect
+          (progn
+            (omy-ai-plan)
+            (let ((buf (seq-find
+                        (lambda (b) (string-prefix-p "*gptel-agent:" (buffer-name b)))
+                        (buffer-list))))
+              (should buf)
+              (should (buffer-local-value 'gptel-mode buf))
+              ;; plan preset: read-only toolset only, no write-class tools
+              (let ((tools (mapcar #'gptel-tool-name
+                                   (buffer-local-value 'gptel-tools buf))))
+                (should (member "Read" tools))
+                (should-not (member "Write" tools))
+                (should-not (member "Edit" tools))
+                (should-not (member "Bash" tools)))
+              (let ((sys (buffer-local-value 'gptel--system-message buf)))
+                (should (string-match-p "planning agent" sys)))
+              ;; session-level policy still applies: git repo -> no per-call
+              ;; confirmation, AGENTS.md injected as live context
+              (should (local-variable-p 'gptel-confirm-tool-calls buf))
+              (should (null (buffer-local-value 'gptel-confirm-tool-calls buf)))
+              (should (member (list expected)
+                              (buffer-local-value 'gptel-context buf)))
+              (should (null (default-value 'gptel-context)))))
+        ;; hermetic cleanup: window and agent buffer
+        (dolist (b (buffer-list))
+          (when (string-prefix-p "*gptel-agent:" (buffer-name b))
+            (let ((w (get-buffer-window b)))
+              (when (window-live-p w) (ignore-errors (delete-window w))))
+            (kill-buffer b)))))))
+
 (ert-deftest omy-ai/staged-diff-reads-index ()
   (skip-unless (executable-find "git"))
   (let* ((dir (file-name-as-directory (make-temp-file "repo" t)))

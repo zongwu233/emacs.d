@@ -103,19 +103,18 @@
   (let ((p (expand-file-name "AGENTS.md" (or root (omy-ai--project-root)))))
     (and (file-exists-p p) p)))
 
-(defun omy-ai-agent ()
-  "Open a gptel-agent session for the current project.
+(defun omy-ai--open-agent (&optional preset)
+  "Open a gptel-agent session at the project root, loading PRESET when given.
 Inside a git repository: write-class tools skip confirmation (direct writes with
 git as the safety net) and AGENTS.md is injected.
 Outside a repository: retain gptel-agent's default per-call confirmation and show a notice."
-  (interactive)
   (let* ((root (omy-ai--project-root))
          (in-git (omy-ai--inside-git-p root))
          (rules (omy-ai--rules-path root)))
     (unless in-git
       (message "omy-ai: not inside a git repository, write-class tools keep per-call confirmation"))
     (let ((default-directory root))
-      (gptel-agent root))
+      (gptel-agent root preset))
     (let ((buf (or (and (bound-and-true-p gptel-mode) (current-buffer))
                    (seq-find (lambda (b) (buffer-local-value 'gptel-mode b))
                              (buffer-list)))))
@@ -124,6 +123,24 @@ Outside a repository: retain gptel-agent's default per-call confirmation and sho
             (when in-git (setq-local gptel-confirm-tool-calls nil))
             (when rules (setq-local gptel-context (list (list rules)))))
         (message "omy-ai: agent session buffer not found, confirmation policy left unchanged")))))
+
+(defun omy-ai-agent ()
+  "Open a gptel-agent session for the current project.
+Inside a git repository: write-class tools skip confirmation (direct writes with
+git as the safety net) and AGENTS.md is injected.
+Outside a repository: retain gptel-agent's default per-call confirmation and show a notice."
+  (interactive)
+  (omy-ai--open-agent))
+
+(defun omy-ai-plan ()
+  "Open a read-only planning session (the gptel-plan preset) for the current project.
+Same project-root handling and AGENTS.md injection as `omy-ai-agent', but the
+preset mounts only read-only tools (Read/Grep/Glob/web plus subagents): the
+model explores the codebase and produces an implementation plan without writing
+anything.  The session header-line can still toggle back to the full agent
+preset mid-session."
+  (interactive)
+  (omy-ai--open-agent 'gptel-plan))
 
 ;;; Workflow commands ------------------------------------------------------
 (defvar omy-ai-commit-system

@@ -46,13 +46,15 @@ Emacs 内置的 AI 编码智能体：gptel 多后端对话与工具循环、minu
 | 键 | 命令 | 功能 |
 |---|---|---|
 | `SPC a a` | `omy-ai-agent` | 为当前项目打开 agent 会话（文件读写/bash 等工具循环） |
+| `SPC a p` | `omy-ai-plan` | 为当前项目打开只读规划会话（gptel-plan 预设：仅 Read/Grep/Glob/web/子代理，产出实施计划不写文件） |
 | `SPC a c` | `omy-ai-commit` | staged diff → commit message，复制进 kill-ring 并在 echo 区显示 |
 | `SPC a r` | `omy-ai-review` | 审查 staged diff，结果在 `*omy-ai review*` |
 | `SPC a e` | `omy-ai-explain` | 解释当前选区，结果在 `*omy-ai explain*` |
 | `SPC a f` | `omy-ai-refactor` | 重构当前选区（保持外部行为，只返回代码），结果在 `*omy-ai refactor*` 供检查后替换 |
 
 - `SPC a a` 打开的 agent 会话以项目根为工作目录。项目在 git 工作树内时，写类工具免逐次确认（直接写入，git 回滚兜底），并自动把项目根 `AGENTS.md` 注入为活上下文——每次请求重读文件当前内容，修改规则无需重开会话。不在 git 仓库内则保持逐次确认，并 echo 提示。
-- 子代理定义从 `~/.emacs.d/agents/*.md` 加载（内置只读的 `code-reviewer`：正确性、边界、并发、安全、测试缺口，按严重程度输出中文报告，无问题明确 LGTM）；在 agent 会话里点名调用，报告作为工具结果写回主会话。
+- `SPC a p` 与 `SPC a a` 共用同一入口逻辑（`omy-ai--open-agent`），仅把 preset 换成包内自带的 `gptel-plan`：AGENTS.md 注入与 git 免确认策略完全一致，只换工具集与系统提示。会话 header-line 的 [Agent]/[Plan] 按钮可在两种 preset 间随时切换。
+- 子代理定义从 `~/.emacs.d/agents/*.md` 与 gptel-agent 包自带 `agents/` 目录加载（两者都在 `gptel-agent-dirs` 里），在 agent 会话里点名调用，报告作为工具结果写回主会话。自带的只读 `code-reviewer`（正确性、边界、并发、安全、测试缺口，按严重程度输出中文报告，无问题明确 LGTM）之外，包内还预置 `executor`（自主执行多步任务）、`researcher`（联网与代码库调研）、`introspector`（Elisp/Emacs API 内省），开箱即用。
 - commit/review/explain/refactor 都是无状态单发请求：不走会话历史，使用当前默认后端与模型。commit 与 review 要求先 `git add`；不在 git 仓库或没有 staged 改动时直接报错。
 - `SPC a C`（会话压缩）同为单发请求，见 Project chat sessions。
 
