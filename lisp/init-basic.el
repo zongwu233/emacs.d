@@ -224,7 +224,47 @@
   :ensure nil
   :hook (after-init . global-so-long-mode))  
 
+;; -----------------------------------------------------------------------------
+;; 输入法配置（针对 WSL / Linux 平台）
+;; 说明：
+;; 1. Windows 原生 (windows-nt) 和 macOS (darwin) 下，Emacs 可直接原生使用系统输入法。
+;; 2. WSL 环境下因 WSLg 图形桥接限制，宿主输入法无法穿透，因此在 Linux/WSL 下启用 emacs-rime。
+;; 3. 需要系统预先安装 librime 依赖:
+;;    sudo apt install -y librime-dev librime-data librime-data-pinyin
+;; -----------------------------------------------------------------------------
+(defvar my-wsl-p
+  (and (eq system-type 'gnu/linux)
+       (or (getenv "WSL_DISTRO_NAME")
+           (string-match-p "microsoft" (downcase (or operating-system-release "")))))
+  "Non-nil if running inside Windows Subsystem for Linux.")
 
+;; 若只想在 WSL 下生效，可改为 (when my-wsl-p ...)
+;; 若希望在所有 Linux 平台生效，可保留 (when (or my-wsl-p (eq system-type 'gnu/linux)) ...)
+(when (or my-wsl-p (eq system-type 'gnu/linux))
+  ;; GUI 下使用 posframe 渲染光标跟随候选框
+  (use-package posframe
+    :ensure t
+    :when (display-graphic-p))
 
+  (use-package rime
+    :ensure t
+    :custom
+    (default-input-method "rime")
+    (rime-user-data-dir (expand-file-name "rime" user-emacs-directory))
+    (rime-share-data-dir "/usr/share/rime-data")
+    :config
+    ;; GUI 模式使用 posframe，终端模式使用 message 显示候选词
+    (setq rime-show-candidate
+          (if (display-graphic-p) 'posframe 'message))
+
+    ;; 切换输入法快捷键 (Emacs 默认是 C-\)
+    (global-set-key (kbd "C-\\") 'toggle-input-method)
+
+    ;; 与 evil 模式配合：退出 insert 模式自动切回英文，避免 normal state 误触
+    (with-eval-after-load 'evil
+      (add-hook 'evil-normal-state-entry-hook
+                (lambda ()
+                  (when (and (boundp 'rime-mode) rime-mode)
+                    (rime-mode -1)))))))
 
 (provide 'init-basic)
