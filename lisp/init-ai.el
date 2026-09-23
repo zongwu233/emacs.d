@@ -1,106 +1,131 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 ;;; init-ai.el --- AI coding features -*- lexical-binding: t; -*-
 
-;; The omy-ai library (sessions, agent wiring, workflow commands, backends,
-;; chat UI) lives in the standalone emacs-agent repo; this file only installs
-;; the package dependencies and wires keybindings.  The repo is cloned from
-;; the private GitHub remote on first start and cached under site-lisp/.
-;; When git or SSH access to GitHub is unavailable, the rest of the config
-;; still initializes; the AI menu and minuet stay disabled until it is fixed.
-(defconst my-emacs-agent-repo "git@github.com:zongwu233/emacs-agent.git"
-  "SSH remote of the private emacs-agent repo providing the omy-ai library.")
+;; gptel + gptel-agent + gptel-preset-collection. Default backend is Zhipu GLM
+;; (coding-plan endpoint). Dedicated chat buffers use Org; replies are wrapped
+;; in quote blocks. Inline completion is minuet on the same GLM endpoint.
 
-(defconst my-emacs-agent-dir
-  (file-name-as-directory
-   (expand-file-name "emacs-agent"
-                     (expand-file-name "site-lisp" user-emacs-directory)))
-  "Local checkout of the emacs-agent repo providing the omy-ai library.")
+(defconst my/gptel-zhipu-endpoint
+  "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions"
+  "Zhipu GLM coding-plan endpoint (the local account is on zhipu-coding-plan).
+If you switch to a standard API key, change back to
+https://open.bigmodel.cn/api/paas/v4/chat/completions.")
 
-(defun my/bootstrap-emacs-agent ()
-  "Ensure the emacs-agent repo is present in `my-emacs-agent-dir'.
-Clone it from `my-emacs-agent-repo' when missing.  Return non-nil when
-`omy-ai.el' is available afterwards."
-  (cond
-   ((file-exists-p (expand-file-name "omy-ai.el" my-emacs-agent-dir)) t)
-   ((not (executable-find "git"))
-    (warn "Cannot bootstrap emacs-agent: git not found in PATH")
-    nil)
-   (t
-    (message "Cloning emacs-agent from %s..." my-emacs-agent-repo)
-    (make-directory (file-name-directory (directory-file-name my-emacs-agent-dir)) t)
-    (unless (zerop (call-process "git" nil
-                                 (get-buffer-create "*emacs-agent-clone*") t
-                                 "clone" my-emacs-agent-repo
-                                 (directory-file-name my-emacs-agent-dir)))
-      (warn "Failed to clone %s; check *emacs-agent-clone* and SSH access to GitHub"
-            my-emacs-agent-repo))
-    (file-exists-p (expand-file-name "omy-ai.el" my-emacs-agent-dir)))))
+(defun my/gptel-close-org-quote (beg end)
+  "Insert #+END_QUOTE at END, matching the org-mode response prefix.
+
+`gptel-post-response-functions' runs after the next prompt prefix is
+inserted, but END is locked to the response tail (see
+`gptel--handle-post-insert'), so this does not wrap the following prompt."
+  (when (and end beg (not (eq beg end)) (derived-mode-p 'org-mode))
+    (save-excursion
+      (goto-char end)
+      (unless (looking-at-p "[ \t]*#\\+END_QUOTE")
+        (unless (bolp) (insert "\n"))
+        (insert "#+END_QUOTE\n")))))
+
+(defun my/gptel-plan ()
+  "Open a gptel-agent session with the planning preset."
+  (interactive)
+  (require 'project)
+  (gptel-agent (if-let ((proj (project-current)))
+                   (project-root proj)
+                 default-directory)
+               'gptel-plan))
 
 (use-package gptel
   :ensure t
+  :demand t
+  :custom
+  (gptel-default-mode 'org-mode)
+  (gptel-include-reasoning 'ignore)
+  :config
+  (require 'gptel-openai)
+  ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
+  ;; host on top and trips the api.openai.com check, building a responses backend
+  ;; by mistake (see gptel-make-openai).
+  (defvar my/gptel-zhipu
+    (gptel-make-openai "zhipu"
+      :host "open.bigmodel.cn"
+      :stream t
+      :endpoint "/api/coding/paas/v4/chat/completions"
+      ;; gptel's default --compressed negotiates gzip; some servers only flush
+      ;; once the compressed buffer fills, so SSE arrives in one lump.
+      :curl-args '("-H" "Accept-Encoding: identity")
+      :key (lambda () (or (getenv "ZHIPUAI_API_KEY") "MISSING-ZHIPUAI-API-KEY"))
+      :models '(glm-5.3-flash glm-4.6 glm-4.5 glm-4.5-air glm-4.5-flash)))
+  (defvar my/gptel-deepseek
+    (gptel-make-openai "deepseek"
+      :host "api.deepseek.com"
+      :stream t
+      :endpoint "/v1/chat/completions"
+      :curl-args '("-H" "Accept-Encoding: identity")
+      :key (lambda () (or (getenv "DEEPSEEK_API_KEY") "MISSING-DEEPSEEK-API-KEY"))
+      :models '(deepseek-chat deepseek-reasoner)))
+  (defvar my/gptel-vllm
+    (gptel-make-openai "vllm"
+      :host "localhost:8000"
+      :stream t
+      :protocol "http"
+      :endpoint "/v1/chat/completions"
+      :key "EMPTY"
+      :curl-args '("-H" "Accept-Encoding: identity")
+      :models '(local-model)))
+  (setq-default gptel-backend my/gptel-zhipu
+                gptel-model 'glm-5.3-flash)
+  ;; GLM 5.x thinks in interleaved mode; gptel's block parsing assumes reasoning
+  ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
+  (put 'glm-5.3-flash :request-params '(:thinking (:type "disabled")))
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "#+BEGIN_QUOTE\n")
+  ;; add-hook prepends: last add runs first. end-of-response must see original
+  ;; BEG/END before #+END_QUOTE is inserted.
+  (add-hook 'gptel-post-response-functions #'my/gptel-close-org-quote)
+  (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
+  (add-hook 'after-init-hook
+            (lambda ()
+              (unless (or (getenv "ZHIPUAI_API_KEY") (getenv "DEEPSEEK_API_KEY"))
+                (message "init-ai: ZHIPUAI_API_KEY / DEEPSEEK_API_KEY not set, AI features unavailable")))))
+
+(use-package gptel-agent
+  :ensure t
+  :demand t
+  :after gptel
+  :config
+  (gptel-agent-update))
+
+(use-package gptel-preset-collection
+  :quelpa (gptel-preset-collection
+           :fetcher github
+           :repo "karthink/gptel-preset-collection")
+  :after gptel
   :demand t)
 
-(defconst my/emacs-agent-loaded
-  (and (my/bootstrap-emacs-agent)
-       (progn (add-to-list 'load-path my-emacs-agent-dir) t)
-       (require 'omy-ai nil t))
-  "Non-nil after init when omy-ai was loaded from the emacs-agent repo.
-Nil means the AI menu and minuet are disabled for this session.")
+(use-package minuet
+  :ensure t
+  :demand t
+  :config
+  (setq minuet-provider 'openai-compatible
+        minuet-auto-suggestion-debounce-delay 0.4
+        minuet-auto-suggestion-throttle-delay 1.0)
+  (plist-put minuet-openai-compatible-options :end-point my/gptel-zhipu-endpoint)
+  (plist-put minuet-openai-compatible-options :api-key "ZHIPUAI_API_KEY")
+  (plist-put minuet-openai-compatible-options :model "glm-5.3-flash")
+  (plist-put minuet-openai-compatible-options :optional '(:thinking (:type "disabled")))
+  (define-key minuet-active-mode-map (kbd "TAB") #'minuet-accept-suggestion)
+  (define-key minuet-active-mode-map [tab] #'minuet-accept-suggestion)
+  (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
+  (add-hook 'minuet-active-mode-hook #'evil-normalize-keymaps))
 
-(unless my/emacs-agent-loaded
-  (display-warning
-   '(init-ai emacs-agent)
-   (format "omy-ai library unavailable; the AI menu (SPC a) and minuet are disabled.
-The repo is private and needs your GitHub SSH key.  Fix with:
-  git clone %s %s
-then restart Emacs."
-           my-emacs-agent-repo (directory-file-name my-emacs-agent-dir))))
+;;; AI menu (SPC a)------------------------------------------------
+(+general-global-menu! "ai" "a"
+  "s" 'gptel
+  "S" 'gptel-menu
+  "a" 'gptel-agent
+  "p" 'my/gptel-plan
+  "C" 'gptel-agent-compact
+  "i" 'minuet-show-suggestion)
 
-(when my/emacs-agent-loaded
-  ;;; Agent (gptel-agent provides the toolset and presets) ---------------------------
-  (use-package gptel-agent
-    :ensure t
-    :demand t
-    :config
-    ;; omy-ai unifies all gptel buffers on Org (see omy-ai.el)
-    (add-to-list 'gptel-agent-dirs (expand-file-name "agents" my-emacs-agent-dir))
-    (gptel-agent-update))
+(defconst my/gptel-init-version "1.0-gptel"
+  "Config version probe: after restarting Emacs, M-: my/gptel-init-version should show this value.")
 
-  ;;; Inline completion (minuet, on the GLM low-cost tier) -------------------------------
-  (use-package minuet
-    :ensure t
-    :demand t
-    :config
-    (setq minuet-provider 'openai-compatible
-          minuet-auto-suggestion-debounce-delay 0.4
-          minuet-auto-suggestion-throttle-delay 1.0)
-    (plist-put minuet-openai-compatible-options :end-point omy-ai-zhipu-endpoint)
-    ;; minuet accepts an environment variable name directly
-    (plist-put minuet-openai-compatible-options :api-key "ZHIPUAI_API_KEY")
-    (plist-put minuet-openai-compatible-options :model "glm-5.3-flash")
-    ;; completion does not need thinking; disabling it lowers latency. Non-OpenAI-standard
-    ;; parameters must go into :optional, which minuet merely splices into the request body
-    (plist-put minuet-openai-compatible-options :optional '(:thinking (:type "disabled")))
-    (define-key minuet-active-mode-map (kbd "TAB") #'minuet-accept-suggestion)
-    (define-key minuet-active-mode-map [tab] #'minuet-accept-suggestion)
-    (add-hook 'prog-mode-hook #'minuet-auto-suggestion-mode)
-
-    (add-hook 'minuet-active-mode-hook #'evil-normalize-keymaps))
-
-  ;;; AI menu (SPC a)------------------------------------------------
-  (+general-global-menu! "ai" "a"
-    "s" 'omy-ai-session-new
-    "S" 'omy-ai-session-open)
-  (general-def :keymaps '+general-global-ai-map "a" 'omy-ai-agent)
-  (general-def :keymaps '+general-global-ai-map
-    "p" 'omy-ai-plan
-    "c" 'omy-ai-commit
-    "r" 'omy-ai-review
-    "e" 'omy-ai-explain
-    "f" 'omy-ai-refactor)
-  (general-def :keymaps '+general-global-ai-map "i" 'omy-ai-complete)
-  (general-def :keymaps '+general-global-ai-map "C" 'omy-ai-compact))
-
-(defconst omy-ai-version "0.9.1-site-lisp"
-  "Config version probe: after restarting Emacs, M-: omy-ai-version should show this value.")
 (provide 'init-ai)

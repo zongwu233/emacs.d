@@ -1,28 +1,57 @@
 ;;; -*- lexical-binding: t; -*-
-;; Config-level tests for lisp/init-ai.el wiring that stays in .emacs.d
-;; (minuet).  Library tests live in ~/.emacs.d/site-lisp/emacs-agent/tests/test-omy-ai.el.
+;; Config-level tests for lisp/init-ai.el (gptel + GLM + minuet).
 ;; Runner: emacs --batch -l init.el -l tests/test-init-ai.el -f ert-run-tests-batch-and-exit
 (require 'ert)
+(require 'gptel)
 (require 'minuet nil t)
 
-(ert-deftest omy-ai/minuet-provider-config ()
-  (skip-unless (and my/emacs-agent-loaded (featurep 'minuet)))
-  (should (featurep 'minuet))
+(ert-deftest gptel/default-backend-is-zhipu-glm ()
+  (should (eq (default-value 'gptel-backend) my/gptel-zhipu))
+  (should (eq (default-value 'gptel-model) 'glm-5.3-flash))
+  (should (equal (gptel-backend-host my/gptel-zhipu) "open.bigmodel.cn"))
+  (should (equal (gptel-backend-endpoint my/gptel-zhipu)
+                 "/api/coding/paas/v4/chat/completions")))
+
+(ert-deftest gptel/org-mode-default-and-quote-prefix ()
+  (should (eq gptel-default-mode 'org-mode))
+  (should (equal (alist-get 'org-mode gptel-response-prefix-alist)
+                 "#+BEGIN_QUOTE\n")))
+
+(ert-deftest gptel/close-org-quote-inserts-end-at-response-end ()
+  (with-temp-buffer
+    (org-mode)
+    (insert "* Chat\n#+BEGIN_QUOTE\nhello")
+    (let ((beg (point-min))
+          (end (point-max)))
+      (insert "\n*** \n")                ; next prompt prefix, as gptel does
+      (my/gptel-close-org-quote beg end)
+      (should (equal (buffer-string)
+                     "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n\n*** \n")))))
+
+(ert-deftest gptel/post-response-hooks-registered ()
+  (should (memq #'my/gptel-close-org-quote gptel-post-response-functions))
+  (should (memq #'gptel-end-of-response gptel-post-response-functions)))
+
+(ert-deftest gptel/glm-thinking-disabled ()
+  (should (equal (get 'glm-5.3-flash :request-params)
+                 '(:thinking (:type "disabled")))))
+
+(ert-deftest gptel/agent-and-presets-loaded ()
+  (should (featurep 'gptel-agent))
+  (should (featurep 'gptel-preset-collection))
+  (should (fboundp 'gptel-agent))
+  (should (fboundp 'gptel-agent-compact)))
+
+(ert-deftest gptel/minuet-provider-config ()
+  (skip-unless (featurep 'minuet))
   (should (eq minuet-provider 'openai-compatible))
   (should (string-match-p "bigmodel"
                           (plist-get minuet-openai-compatible-options :end-point)))
   (should (equal "glm-5.3-flash"
                  (plist-get minuet-openai-compatible-options :model))))
 
-(ert-deftest omy-ai/minuet-thinking-disabled-via-optional ()
-  (skip-unless (and my/emacs-agent-loaded (featurep 'minuet)))
-  ;; minuet 的非标准参数必须经 :optional 拼进请求体，而非顶层键
+(ert-deftest gptel/minuet-thinking-disabled-via-optional ()
+  (skip-unless (featurep 'minuet))
   (should (equal '(:thinking (:type "disabled"))
                  (plist-get minuet-openai-compatible-options :optional)))
   (should-not (plist-get minuet-openai-compatible-options :thinking)))
-
-(ert-deftest omy-ai/library-agents-dir-registered ()
-  (skip-unless my/emacs-agent-loaded)
-  ;; init-ai 把 emacs-agent 仓库的 agents/ 目录挂进 gptel-agent-dirs
-  (should (member (expand-file-name "agents" my-emacs-agent-dir)
-                  gptel-agent-dirs)))
