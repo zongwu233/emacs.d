@@ -11,6 +11,37 @@
 If you switch to a standard API key, change back to
 https://open.bigmodel.cn/api/paas/v4/chat/completions.")
 
+(defcustom my/gptel-session-directory
+  (locate-user-emacs-file "gptel-sessions/")
+  "Directory for gptel sessions saved when Emacs exits."
+  :type 'directory)
+
+(defun my/gptel-session-file-name (buffer)
+  "Return a unique session filename for BUFFER."
+  (let* ((name (replace-regexp-in-string
+                "\\`[-.]+\\|[-.]+\\'" ""
+                (replace-regexp-in-string "[^[:alnum:]_.-]+" "-"
+                                          (buffer-name buffer))))
+         (base (format-time-string
+                (concat "%Y%m%d-%H%M%S-" (if (string-empty-p name) "gptel" name))))
+         (file (expand-file-name (concat base ".org") my/gptel-session-directory))
+         (suffix 1))
+    (while (file-exists-p file)
+      (setq file (expand-file-name (format "%s-%d.org" base suffix)
+                                   my/gptel-session-directory)
+            suffix (1+ suffix)))
+    file))
+
+(defun my/gptel-save-unsaved-sessions-on-exit ()
+  "Ask to save each unsaved gptel buffer before Emacs exits."
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (when (and gptel-mode (null buffer-file-name) (> (buffer-size) 0)
+                 (y-or-n-p (format "Save gptel session %s? " (buffer-name))))
+        (make-directory my/gptel-session-directory t)
+        (set-visited-file-name (my/gptel-session-file-name buffer) t)
+        (save-buffer)))))
+
 (defun my/gptel-close-org-quote (beg end)
   "Insert #+END_QUOTE at END, matching the org-mode response prefix.
 
@@ -84,6 +115,7 @@ inserted, but END is locked to the response tail (see
                       :foreground "#bbc2cf"
                       :box '(:line-width 4 :color "#51afef")
                       :extend t)
+  (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
   ;; add-hook prepends: last add runs first. end-of-response must see original
   ;; BEG/END before #+END_QUOTE is inserted.
   (add-hook 'gptel-post-response-functions #'my/gptel-close-org-quote)

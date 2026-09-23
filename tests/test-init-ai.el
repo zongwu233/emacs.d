@@ -25,6 +25,26 @@
                  '(:line-width 4 :color "#51afef")))
   (should (eq (face-attribute 'org-quote :extend) t)))
 
+(ert-deftest gptel/exit-save-writes-session-to-configured-directory ()
+  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
+         (buffer (generate-new-buffer "*gptel-test*"))
+         saved-file)
+    (unwind-protect
+        (progn
+          (with-current-buffer buffer
+            (org-mode)
+            (insert "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n")
+            (setq-local gptel-mode t))
+          (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t)))
+            (my/gptel-save-unsaved-sessions-on-exit))
+          (setq saved-file (buffer-file-name buffer))
+          (should (file-in-directory-p saved-file my/gptel-session-directory))
+          (should (string-match-p "hello" (with-temp-buffer
+                                             (insert-file-contents saved-file)
+                                             (buffer-string)))))
+      (when (buffer-live-p buffer) (kill-buffer buffer))
+      (delete-directory my/gptel-session-directory t))))
+
 (ert-deftest gptel/close-org-quote-inserts-end-at-response-end ()
   (with-temp-buffer
     (org-mode)
@@ -38,8 +58,8 @@
 
 (ert-deftest gptel/post-response-hooks-registered ()
   (should (memq #'my/gptel-close-org-quote gptel-post-response-functions))
-  (should (memq #'gptel-end-of-response gptel-post-response-functions)))
-
+  (should (memq #'gptel-end-of-response gptel-post-response-functions))
+  (should (memq #'my/gptel-save-unsaved-sessions-on-exit kill-emacs-hook)))
 (ert-deftest gptel/glm-thinking-disabled ()
   (should (equal (get 'glm-5.3-flash :request-params)
                  '(:thinking (:type "disabled")))))
