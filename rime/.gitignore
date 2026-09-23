@@ -1,0 +1,5 @@
+# librime build artifacts and machine-local state
+build/
+*.userdb/
+installation.yaml
+user.yaml
