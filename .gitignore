@@ -82,3 +82,7 @@ eln-cache/
 org-persist/*
 server/
 /site-lisp/emacs-agent/
+/rime/build/
+/rime/*.userdb/
+/rime/installation.yaml
+/rime/user.yaml
