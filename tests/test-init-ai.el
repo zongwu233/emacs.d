@@ -17,6 +17,14 @@
   (should (equal (alist-get 'org-mode gptel-response-prefix-alist)
                  "#+BEGIN_QUOTE\n")))
 
+(ert-deftest gptel/reasoning-enabled-and-quote-face-styled ()
+  (should (eq gptel-include-reasoning t))
+  (should (equal (face-attribute 'org-quote :background) "#21242b"))
+  (should (equal (face-attribute 'org-quote :foreground) "#bbc2cf"))
+  (should (equal (face-attribute 'org-quote :box)
+                 '(:line-width 4 :color "#51afef")))
+  (should (eq (face-attribute 'org-quote :extend) t)))
+
 (ert-deftest gptel/close-org-quote-inserts-end-at-response-end ()
   (with-temp-buffer
     (org-mode)

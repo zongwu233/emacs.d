@@ -2244,7 +2244,7 @@ inserted, but END is locked to the response tail (see
   :demand t
   :custom
   (gptel-default-mode 'org-mode)
-  (gptel-include-reasoning 'ignore)
+  (gptel-include-reasoning t)
   :config
   (require 'gptel-openai)
   ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
@@ -2283,6 +2283,13 @@ inserted, but END is locked to the response tail (see
   ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
   (put 'glm-5.3-flash :request-params '(:thinking (:type "disabled")))
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "#+BEGIN_QUOTE\n")
+  ;; Keep reasoning available from providers that return it; GLM thinking is
+  ;; disabled above because gptel expects reasoning before the final answer.
+  (set-face-attribute 'org-quote nil
+                      :background "#21242b"
+                      :foreground "#bbc2cf"
+                      :box '(:line-width 4 :color "#51afef")
+                      :extend t)
   ;; add-hook prepends: last add runs first. end-of-response must see original
   ;; BEG/END before #+END_QUOTE is inserted.
   (add-hook 'gptel-post-response-functions #'my/gptel-close-org-quote)
