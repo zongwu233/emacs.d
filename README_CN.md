@@ -50,6 +50,8 @@ git clone https://github.com/zongwu233/emacs.d.v2.git ~/.emacs.d
 
 首次启动时 Emacs 会自动下载并安装所有包。安装完成后重启 Emacs。
 
+AI 功能额外依赖私有的 [emacs-agent](https://github.com/zongwu233/emacs-agent) 仓库：需要 `git`，以及能访问 `git@github.com:zongwu233/emacs-agent.git` 的 SSH key。首次启动时 Emacs 会自动克隆到 `~/.emacs.d/site-lisp/emacs-agent`；缺少凭证时其余配置照常初始化，仅 AI 菜单（SPC a）和 minuet 被禁用，启动警告中会给出修复命令。
+
 > **注意**：包源使用的是 163 镜像（`mirrors.163.com/elpa/`），国内用户无需额外配置。如果你在海外，可以在 `lisp/init-package.el` 中改为 MELPA 官方源。
 
 ## 项目结构

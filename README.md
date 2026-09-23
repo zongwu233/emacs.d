@@ -50,6 +50,8 @@ git clone https://github.com/zongwu233/emacs.d.v2.git ~/.emacs.d
 
 Emacs will automatically download and install all packages on first launch. Restart Emacs after installation completes.
 
+AI features additionally need the private [emacs-agent](https://github.com/zongwu233/emacs-agent) repo: `git` plus an SSH key with access to `git@github.com:zongwu233/emacs-agent.git`. Emacs clones it into `~/.emacs.d/site-lisp/emacs-agent` on first launch; without it the rest of the config still initializes, the AI menu (SPC a) and minuet stay disabled, and a startup warning shows the fix command.
+
 > **Note:** The package archive is configured to use the 163 mirror (`mirrors.163.com/elpa/`). If you're outside China, you can switch to the official MELPA source in `lisp/init-package.el`.
 
 ## Project Structure
