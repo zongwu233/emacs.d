@@ -45,7 +45,7 @@ After first launch, run `M-x nerd-icons-install-fonts` to install icon fonts. (W
 mv ~/.emacs.d ~/.emacs.d.bak
 
 # Clone the repo
-git clone https://github.com/zongwu233/emacs.d.v2.git ~/.emacs.d
+git clone https://github.com/zongwu233/emacs.d.git ~/.emacs.d
 ```
 
 Emacs will automatically download and install all packages on first launch. Restart Emacs after installation completes.

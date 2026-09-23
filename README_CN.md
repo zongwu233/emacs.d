@@ -45,7 +45,7 @@
 mv ~/.emacs.d ~/.emacs.d.bak
 
 # 克隆仓库
-git clone https://github.com/zongwu233/emacs.d.v2.git ~/.emacs.d
+git clone https://github.com/zongwu233/emacs.d.git ~/.emacs.d
 ```
 
 首次启动时 Emacs 会自动下载并安装所有包。安装完成后重启 Emacs。
