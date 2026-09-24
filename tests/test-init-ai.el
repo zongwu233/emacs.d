@@ -46,7 +46,7 @@
            (concat ":PROPERTIES:\n"
                    ":GPTEL_BACKEND: zhipu\n"
                    ":GPTEL_MODEL: glm-5.3-flash\n"
-                   ":GPTEL_BOUNDS: ((response (1 44)))\n"
+                   ":GPTEL_BOUNDS: ((response (130 172)))\n"
                    ":END:\n\n"
                    "* Chat\n#+BEGIN_QUOTE\n"
                    "AI response line one\nAI response line two\n"
@@ -63,30 +63,14 @@
             (should-not truncate-lines)
             (should word-wrap)
             (should-not (bound-and-true-p visual-fill-column-mode))
-            (let ((overlay (car (overlays-at (point-min)))))
-              (should (eq (overlay-get overlay 'face)
-                          'my/gptel-response-face))
-              (should (equal (substring-no-properties
-                              (overlay-get overlay 'line-prefix)) "│ ")))))
+            (goto-char (point-min))
+            (search-forward "AI response line one")
+            (should gptel-highlight-mode)
+            (should (eq (get-char-property (line-beginning-position) 'gptel)
+                        'response))
+            (should (get-char-property (line-beginning-position) 'line-prefix))))
       (when (buffer-live-p buffer) (kill-buffer buffer))
       (delete-directory my/gptel-session-directory t))))
-
-(ert-deftest gptel/restored-response-bounds-rebuild-background-and-quote-bar ()
-  (with-temp-buffer
-    (org-mode)
-    (insert "AI response line one\nAI response line two\n")
-    (let ((start (point-min))
-          (end (point-max)))
-      (gptel--restore-props `((response (,start ,end))) )
-      (setq-local gptel-mode t)
-      (my/gptel-restore-response-styles)
-      (let ((overlay (car (overlays-at start))))
-        (should overlay)
-        (should (eq (overlay-get overlay 'face) 'my/gptel-response-face))
-        (should (equal (substring-no-properties
-                        (overlay-get overlay 'line-prefix)) "│ "))
-        (should (equal (substring-no-properties
-                        (overlay-get overlay 'wrap-prefix)) "│ "))))))
 
 (ert-deftest gptel/agent-confirms-destructive-bash-only ()
   (should (eq gptel-confirm-tool-calls 'auto))
@@ -111,14 +95,6 @@
           (delete-file (expand-file-name "old.org" directory)))
       (delete-directory directory t))))
 
-(ert-deftest gptel/response-face-is-defined-for-ai-output ()
-  (should (facep 'my/gptel-response-face))
-  (should (equal (face-attribute 'my/gptel-response-face :background)
-                 "#21242b"))
-  (should (equal (face-attribute 'my/gptel-response-face :foreground)
-                 "#bbc2cf"))
-  (should (eq (face-attribute 'my/gptel-response-face :extend) t)))
-
 (ert-deftest gptel/exit-save-writes-session-to-configured-directory ()
   (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
          (buffer (generate-new-buffer "*gptel-test*"))
@@ -139,21 +115,37 @@
       (when (buffer-live-p buffer) (kill-buffer buffer))
       (delete-directory my/gptel-session-directory t))))
 
-(ert-deftest gptel/close-org-quote-inserts-end-and-response-overlay ()
+(ert-deftest gptel/quote-boundary-preserves-org-rendering-and-folding ()
   (with-temp-buffer
     (org-mode)
-    (insert "* Chat\n#+BEGIN_QUOTE\nhello")
-    (let ((beg (point-min))
-          (end (point-max)))
-      (insert "\n*** \n")                ; next prompt prefix, as gptel does
-      (my/gptel-close-org-quote beg end)
-      (should (equal (buffer-string)
-                     "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n\n*** \n"))
-      (goto-char (point-min))
-      (should (seq-some
-               (lambda (overlay)
-                 (eq (overlay-get overlay 'face) 'my/gptel-response-face))
-               (overlays-at (point)))))))
+    (gptel-mode 1)
+    (insert "* Chat\n#+BEGIN_QUOTE\n")
+    (let ((beg (point)))
+      (insert (propertize
+               "* AI heading\n#+BEGIN_SRC emacs-lisp\n(message \"ok\")\n#+END_SRC\n"
+               'gptel 'response))
+      (let ((end (point)))
+        (insert "\n*** Next prompt\n")
+        (my/gptel-close-org-quote beg end)
+        (gptel-highlight--update beg (point-max))
+        (font-lock-ensure)
+        (goto-char beg)
+        (should (memq 'org-level-1 (get-text-property (point) 'face)))
+        (should (get-char-property (point) 'line-prefix))
+        (search-forward "#+BEGIN_SRC")
+        (beginning-of-line)
+        (should (eq (get-text-property (point) 'face) 'org-block-begin-line))
+        (search-forward "#+END_QUOTE")
+        (beginning-of-line)
+        (should-not (get-char-property (point) 'line-prefix))
+        (should-not (get-char-property (point) 'gptel))
+        (goto-char (point-min))
+        (search-forward "#+BEGIN_QUOTE")
+        (beginning-of-line)
+        (org-cycle)
+        (should (org-fold-folded-p beg 'block))
+        (org-cycle)
+        (should-not (org-fold-folded-p beg 'block))))))
 
 (ert-deftest gptel/post-response-hooks-registered ()
   (should (memq #'my/gptel-close-org-quote gptel-post-response-functions))

@@ -16,10 +16,6 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   "Directory for gptel sessions shared by the user's Org workspace."
   :type 'directory)
 
-(defface my/gptel-response-face
-  '((t (:background "#21242b" :foreground "#bbc2cf" :extend t)))
-  "Background face applied to completed gptel responses."
-  :group 'gptel)
 
 (defun my/gptel-session-file-name (buffer)
   "Return a unique session filename for BUFFER."
@@ -47,26 +43,8 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
-(defun my/gptel-style-response-range (beg end)
-  "Apply the response face and quote bars to BEG through END."
-  (when (< beg end)
-    (let ((overlay (make-overlay beg end nil t))
-          (bar (propertize "│ " 'face 'my/gptel-response-face)))
-      (overlay-put overlay 'my/gptel-response t)
-      (overlay-put overlay 'face 'my/gptel-response-face)
-      (overlay-put overlay 'line-prefix bar)
-      (overlay-put overlay 'wrap-prefix bar)
-      (overlay-put overlay 'evaporate t))))
-
-(defun my/gptel-restore-response-styles ()
-  "Rebuild display-only response styles from gptel's restored text properties."
-  (when (and gptel-mode (fboundp 'gptel--get-buffer-bounds))
-    (remove-overlays nil nil 'my/gptel-response t)
-    (dolist (range (cdr (assq 'response (gptel--get-buffer-bounds))))
-      (my/gptel-style-response-range (car range) (cadr range)))))
-
 (defun my/gptel-close-org-quote (beg end)
-  "Close the Org quote block for response BEG through END and style it.
+  "Close the Org quote block after response BEG through END.
 
 `gptel-post-response-functions' runs after the next prompt prefix is
 inserted, but END is locked to the response tail (see
@@ -77,8 +55,30 @@ inserted, but END is locked to the response tail (see
       (unless (looking-at-p "[ \t]*#\\+END_QUOTE")
         (unless (bolp) (insert "\n"))
         (insert "#+END_QUOTE\n"))
-      (font-lock-ensure beg (point))
-      (my/gptel-style-response-range beg (point)))))
+      (font-lock-flush beg (point)))))
+
+(defun my/gptel-cycle-response-quote ()
+  "Fold a gptel quote even when its Org headings split the block.
+
+Org cannot parse a quote block containing unindented headings as one
+element.  Only handle the opening delimiter of an actual gptel response;
+leave ordinary Org quote blocks to `org-cycle'."
+  (when (and gptel-mode
+             (save-excursion
+               (beginning-of-line)
+               (looking-at-p "[ \t]*#\\+BEGIN_QUOTE[ \t]*$")))
+    (save-excursion
+      (forward-line 1)
+      (when (eq (get-char-property (point) 'gptel) 'response)
+        (let ((from (point))
+              (end (next-single-property-change
+                    (point) 'gptel nil (point-max))))
+          (goto-char end)
+          (skip-chars-forward "\n")
+          (when (looking-at-p "[ \t]*#\\+END_QUOTE[ \t]*$")
+            (org-fold-region from (line-beginning-position)
+                             (not (org-fold-folded-p from 'block)) 'block)
+            t))))))
 
 (defun my/gptel-open-session ()
   "Open a saved gptel session and let gptel restore its state."
@@ -103,7 +103,9 @@ inserted, but END is locked to the response tail (see
     (setq-local visual-fill-column-center-text nil))
   (when (boundp 'visual-fill-column-width)
     (setq-local visual-fill-column-width nil))
-  (my/gptel-restore-response-styles))
+  (gptel-highlight-mode 1)
+  (when (derived-mode-p 'org-mode)
+    (add-hook 'org-tab-first-hook #'my/gptel-cycle-response-quote nil t)))
 
 (defun my/gptel-plan ()
   "Open a gptel-agent session with the planning preset."
@@ -154,6 +156,7 @@ inserted, but END is locked to the response tail (see
   (gptel-default-mode 'org-mode)
   (gptel-include-reasoning t)
   (gptel-display-buffer-action '(display-buffer-full-frame))
+  (gptel-highlight-methods '(margin))
   :config
   (require 'gptel-openai)
 
@@ -190,8 +193,8 @@ inserted, but END is locked to the response tail (see
   ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
   (put 'glm-5.3-flash :request-params '(:thinking (:type "disabled")))
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "#+BEGIN_QUOTE\n")
-  ;; Org gives quote block boundaries their own faces, but not the response
-  ;; body.  Apply the dedicated face to the completed response region below.
+  ;; Let gptel draw the response marker in the left margin.  A full-face
+  ;; overlay here would hide Org's heading and source-block faces.
   (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
   ;; add-hook prepends: last add runs first. end-of-response must see original
   ;; BEG/END before #+END_QUOTE is inserted.
