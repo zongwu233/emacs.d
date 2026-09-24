@@ -12,10 +12,8 @@
   (should (equal (gptel-backend-endpoint my/gptel-zhipu)
                  "/api/coding/paas/v4/chat/completions")))
 
-(ert-deftest gptel/org-mode-default-and-quote-prefix ()
-  (should (eq gptel-default-mode 'org-mode))
-  (should (equal (alist-get 'org-mode gptel-response-prefix-alist)
-                 "#+BEGIN_QUOTE\n")))
+(ert-deftest gptel/org-mode-default ()
+  (should (eq gptel-default-mode 'org-mode)))
 
 (ert-deftest gptel/new-session-display-uses-full-frame ()
   (should (equal gptel-display-buffer-action
@@ -46,11 +44,11 @@
            (concat ":PROPERTIES:\n"
                    ":GPTEL_BACKEND: zhipu\n"
                    ":GPTEL_MODEL: glm-5.3-flash\n"
-                   ":GPTEL_BOUNDS: ((response (130 172)))\n"
+                   ":GPTEL_BOUNDS: ((response (116 158)))\n"
                    ":END:\n\n"
-                   "* Chat\n#+BEGIN_QUOTE\n"
+                   "* Chat\n"
                    "AI response line one\nAI response line two\n"
-                   "#+END_QUOTE\n\n*** Prompt\n")
+                   "\n*** Prompt\n")
            nil file)
           (cl-letf (((symbol-function 'completing-read)
                      (lambda (&rest _) "old-session.org")))
@@ -104,7 +102,7 @@
         (progn
           (with-current-buffer buffer
             (org-mode)
-            (insert "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n")
+            (insert "* Chat\nhello\n")
             (setq-local gptel-mode t))
           (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t)))
             (my/gptel-save-unsaved-sessions-on-exit))
@@ -116,42 +114,30 @@
       (when (buffer-live-p buffer) (kill-buffer buffer))
       (delete-directory my/gptel-session-directory t))))
 
-(ert-deftest gptel/quote-boundary-preserves-org-rendering-and-folding ()
+(ert-deftest gptel/native-response-margin-preserves-org-rendering ()
   (with-temp-buffer
     (org-mode)
     (gptel-mode 1)
-    (insert "* Chat\n#+BEGIN_QUOTE\n")
+    (insert "* Chat\n")
     (let ((beg (point)))
       (insert (propertize
                "* AI heading\n#+BEGIN_SRC emacs-lisp\n(message \"ok\")\n#+END_SRC\n"
                'gptel 'response))
-      (let ((end (point)))
-        (insert "\n*** Next prompt\n")
-        (my/gptel-close-org-quote beg end)
-        (gptel-highlight--update beg (point-max))
-        (font-lock-ensure)
-        (goto-char beg)
-        (should (memq 'org-level-1 (get-text-property (point) 'face)))
-        (should (get-char-property (point) 'line-prefix))
-        (search-forward "#+BEGIN_SRC")
-        (beginning-of-line)
-        (should (eq (get-text-property (point) 'face) 'org-block-begin-line))
-        (search-forward "#+END_QUOTE")
-        (beginning-of-line)
-        (should-not (get-char-property (point) 'line-prefix))
-        (should-not (get-char-property (point) 'gptel))
-        (goto-char (point-min))
-        (search-forward "#+BEGIN_QUOTE")
-        (beginning-of-line)
-        (org-cycle)
-        (should (org-fold-folded-p beg 'block))
-        (org-cycle)
-        (should-not (org-fold-folded-p beg 'block))))))
+      (insert "\n*** Next prompt\n")
+      (gptel-highlight--update beg (point-max))
+      (font-lock-ensure)
+      (goto-char beg)
+      (should (memq 'org-level-1 (get-text-property (point) 'face)))
+      (should (get-char-property (point) 'line-prefix))
+      (search-forward "#+BEGIN_SRC")
+      (beginning-of-line)
+      (should (eq (get-text-property (point) 'face) 'org-block-begin-line))
+      (goto-char (point-min))
+      (search-forward "*** Next prompt")
+      (beginning-of-line)
+      (should-not (get-char-property (point) 'line-prefix))
+      (should-not (get-char-property (point) 'gptel)))))
 
-(ert-deftest gptel/post-response-hooks-registered ()
-  (should (memq #'my/gptel-close-org-quote gptel-post-response-functions))
-  (should (memq #'gptel-end-of-response gptel-post-response-functions))
-  (should (memq #'my/gptel-save-unsaved-sessions-on-exit kill-emacs-hook)))
 (ert-deftest gptel/glm-thinking-disabled ()
   (should (equal (get 'glm-5.3-flash :request-params)
                  '(:thinking (:type "disabled")))))

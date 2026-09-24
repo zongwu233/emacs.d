@@ -2,8 +2,8 @@
 ;;; init-ai.el --- AI coding features -*- lexical-binding: t; -*-
 
 ;; gptel + gptel-agent + gptel-preset-collection. Default backend is Zhipu GLM
-;; (coding-plan endpoint). Dedicated chat buffers use Org; replies are wrapped
-;; in quote blocks. Inline completion is minuet on the same GLM endpoint.
+;; (coding-plan endpoint). Dedicated chat buffers use Org and gptel's margin
+;; response highlight. Inline completion is minuet on the same GLM endpoint.
 
 (defconst my/gptel-zhipu-endpoint
   "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions"
@@ -43,43 +43,6 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
-(defun my/gptel-close-org-quote (beg end)
-  "Close the Org quote block after response BEG through END.
-
-`gptel-post-response-functions' runs after the next prompt prefix is
-inserted, but END is locked to the response tail (see
-`gptel--handle-post-insert'), so this does not wrap the following prompt."
-  (when (and end beg (not (eq beg end)) (derived-mode-p 'org-mode))
-    (save-excursion
-      (goto-char end)
-      (unless (looking-at-p "[ \t]*#\\+END_QUOTE")
-        (unless (bolp) (insert "\n"))
-        (insert "#+END_QUOTE\n"))
-      (font-lock-flush beg (point)))))
-
-(defun my/gptel-cycle-response-quote ()
-  "Fold a gptel quote even when its Org headings split the block.
-
-Org cannot parse a quote block containing unindented headings as one
-element.  Only handle the opening delimiter of an actual gptel response;
-leave ordinary Org quote blocks to `org-cycle'."
-  (when (and gptel-mode
-             (save-excursion
-               (beginning-of-line)
-               (looking-at-p "[ \t]*#\\+BEGIN_QUOTE[ \t]*$")))
-    (save-excursion
-      (forward-line 1)
-      (when (eq (get-char-property (point) 'gptel) 'response)
-        (let ((from (point))
-              (end (next-single-property-change
-                    (point) 'gptel nil (point-max))))
-          (goto-char end)
-          (skip-chars-forward "\n")
-          (when (looking-at-p "[ \t]*#\\+END_QUOTE[ \t]*$")
-            (org-fold-region from (line-beginning-position)
-                             (not (org-fold-folded-p from 'block)) 'block)
-            t))))))
-
 (defun my/gptel-open-session ()
   "Open a saved gptel session and let gptel restore its state."
   (interactive)
@@ -104,8 +67,6 @@ leave ordinary Org quote blocks to `org-cycle'."
   (when (boundp 'visual-fill-column-width)
     (setq-local visual-fill-column-width nil))
   (gptel-highlight-mode 1)
-  (when (derived-mode-p 'org-mode)
-    (add-hook 'org-tab-first-hook #'my/gptel-cycle-response-quote nil t))
   (make-local-variable 'mode-line-misc-info)
   (add-to-list 'mode-line-misc-info
                '(:eval (when (and gptel-mode
@@ -201,13 +162,7 @@ leave ordinary Org quote blocks to `org-cycle'."
   ;; GLM 5.x thinks in interleaved mode; gptel's block parsing assumes reasoning
   ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
   (put 'glm-5.3-flash :request-params '(:thinking (:type "disabled")))
-  (setf (alist-get 'org-mode gptel-response-prefix-alist) "#+BEGIN_QUOTE\n")
-  ;; Let gptel draw the response marker in the left margin.  A full-face
-  ;; overlay here would hide Org's heading and source-block faces.
   (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
-  ;; add-hook prepends: last add runs first. end-of-response must see original
-  ;; BEG/END before #+END_QUOTE is inserted.
-  (add-hook 'gptel-post-response-functions #'my/gptel-close-org-quote)
   (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
   (add-hook 'gptel-mode-hook #'my/gptel-setup-display)
   (add-hook 'after-init-hook
