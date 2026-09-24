@@ -105,7 +105,13 @@ leave ordinary Org quote blocks to `org-cycle'."
     (setq-local visual-fill-column-width nil))
   (gptel-highlight-mode 1)
   (when (derived-mode-p 'org-mode)
-    (add-hook 'org-tab-first-hook #'my/gptel-cycle-response-quote nil t)))
+    (add-hook 'org-tab-first-hook #'my/gptel-cycle-response-quote nil t))
+  (make-local-variable 'mode-line-misc-info)
+  (add-to-list 'mode-line-misc-info
+               '(:eval (when (and gptel-mode
+                                  (caddr gptel--token-usage-strings))
+                         (concat " " (caddr gptel--token-usage-strings))))
+               t))
 
 (defun my/gptel-plan ()
   "Open a gptel-agent session with the planning preset."
@@ -135,7 +141,7 @@ leave ordinary Org quote blocks to `org-cycle'."
              (pcase name
                ("Bash" #'my/gptel-agent-confirm-bash)
                ("Write" #'my/gptel-agent-confirm-write)
-               ((or "Eval" "Agent") t)
+               ("Agent" t)
                (_ nil))))
         (apply #'gptel-make-tool
                (append (cl-loop for slot in '(function name description args async category include)
@@ -157,8 +163,11 @@ leave ordinary Org quote blocks to `org-cycle'."
   (gptel-include-reasoning t)
   (gptel-display-buffer-action '(display-buffer-full-frame))
   (gptel-highlight-methods '(margin))
+  (gptel-cache t)
+  (gptel-use-header-line nil)
   :config
   (require 'gptel-openai)
+  (setq gptel-expert-commands t)
 
   ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
   ;; host on top and trips the api.openai.com check, building a responses backend

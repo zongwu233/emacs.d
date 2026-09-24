@@ -83,7 +83,8 @@
   (should-not (gptel-tool-confirm (gptel-get-tool "Read")))
   (should (eq (gptel-tool-confirm (gptel-get-tool "Write"))
               #'my/gptel-agent-confirm-write))
-  (should (gptel-tool-confirm (gptel-get-tool "Eval")))
+  (should-not (gptel-tool-confirm (gptel-get-tool "Eval")))
+  (should (gptel-tool-confirm (gptel-get-tool "Agent")))
   (let ((directory (make-temp-file "gptel-write-confirm-" t)))
     (unwind-protect
         (progn
