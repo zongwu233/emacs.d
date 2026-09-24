@@ -42,6 +42,38 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
+(defun my/gptel-agent-confirm-bash (command)
+  "Ask before Bash COMMANDS with common destructive operations."
+  (string-match-p
+   "\\_<\\(rm\\|rmdir\\|shred\\|unlink\\|wipefs\\|dd\\|truncate\\|mkfs[^[:space:]]*\\)\\_>\\|\\_<find\\_>.*\\_<-delete\\_>\\|\\_<git[[:space:]]+\\(clean\\|reset\\|restore\\)\\_>.*\\(--hard\\|-[[:alnum:]]*f\\|--staged\\|--worktree\\)"
+   command))
+
+(defun my/gptel-agent-confirm-write (path filename _content)
+  "Ask before the Write tool overwrites PATH/FILENAME."
+  (file-exists-p (expand-file-name filename path)))
+(defun my/gptel-agent-configure-tool-confirmation ()
+  "Allow routine agent tools and confirm destructive or privileged actions."
+  (setq gptel-confirm-tool-calls 'auto)
+  (dolist (name '("Bash" "Mkdir" "Edit" "Insert" "Write" "Eval" "Agent"))
+    (when-let ((tool (gptel-get-tool name)))
+      (let ((confirm
+             (pcase name
+               ("Bash" #'my/gptel-agent-confirm-bash)
+               ("Write" #'my/gptel-agent-confirm-write)
+               ((or "Eval" "Agent") t)
+               (_ nil))))
+        (apply #'gptel-make-tool
+               (append (cl-loop for slot in '(function name description args async category include)
+                                for value = (pcase slot
+                                              ('function (gptel-tool-function tool))
+                                              ('name (gptel-tool-name tool))
+                                              ('description (gptel-tool-description tool))
+                                              ('args (gptel-tool-args tool))
+                                              ('async (gptel-tool-async tool))
+                                              ('category (gptel-tool-category tool))
+                                              ('include (gptel-tool-include tool)))
+                                append (list (intern (concat ":" (symbol-name slot))) value))
+                       (list :confirm confirm)))))))
 (defun my/gptel-close-org-quote (beg end)
   "Insert #+END_QUOTE at END, matching the org-mode response prefix.
 
@@ -70,6 +102,8 @@ inserted, but END is locked to the response tail (see
   :custom
   (gptel-default-mode 'org-mode)
   (gptel-include-reasoning t)
+  (gptel-display-buffer-action '(display-buffer-full-frame))
+
   :config
   (require 'gptel-openai)
   ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
@@ -115,6 +149,7 @@ inserted, but END is locked to the response tail (see
                       :foreground "#bbc2cf"
                       :box '(:line-width 4 :color "#51afef")
                       :extend t)
+  (add-hook 'gptel-mode-hook #'visual-line-mode)
   (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
   ;; add-hook prepends: last add runs first. end-of-response must see original
   ;; BEG/END before #+END_QUOTE is inserted.
@@ -130,7 +165,8 @@ inserted, but END is locked to the response tail (see
   :demand t
   :after gptel
   :config
-  (gptel-agent-update))
+  (gptel-agent-update)
+  (my/gptel-agent-configure-tool-confirmation))
 
 (use-package gptel-preset-collection
   :quelpa (gptel-preset-collection

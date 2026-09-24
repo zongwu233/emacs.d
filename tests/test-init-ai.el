@@ -17,6 +17,39 @@
   (should (equal (alist-get 'org-mode gptel-response-prefix-alist)
                  "#+BEGIN_QUOTE\n")))
 
+(ert-deftest gptel/new-session-display-uses-full-frame ()
+  (should (equal gptel-display-buffer-action
+                 '(display-buffer-full-frame))))
+
+(ert-deftest gptel/session-buffers-use-visual-line-mode ()
+  (with-temp-buffer
+    (org-mode)
+    (run-hooks 'gptel-mode-hook)
+    (should visual-line-mode)))
+
+(ert-deftest gptel/agent-confirms-destructive-bash-only ()
+  (should (eq gptel-confirm-tool-calls 'auto))
+  (should (my/gptel-agent-confirm-bash "rm -rf /tmp/example"))
+  (should (my/gptel-agent-confirm-bash "git reset --hard HEAD"))
+  (should (my/gptel-agent-confirm-bash "find . -delete"))
+  (should-not (my/gptel-agent-confirm-bash "git status --short"))
+  (should-not (my/gptel-agent-confirm-bash "printf 'ok\\n'"))
+  (should-not (gptel-tool-confirm (gptel-get-tool "Edit")))
+  (should-not (gptel-tool-confirm (gptel-get-tool "Read")))
+  (should (eq (gptel-tool-confirm (gptel-get-tool "Write"))
+              #'my/gptel-agent-confirm-write))
+  (should (gptel-tool-confirm (gptel-get-tool "Eval")))
+  (let ((directory (make-temp-file "gptel-write-confirm-" t)))
+    (unwind-protect
+        (progn
+          (should-not (funcall (gptel-tool-confirm (gptel-get-tool "Write"))
+                               directory "new.org" "text"))
+          (write-region "old" nil (expand-file-name "old.org" directory))
+          (should (funcall (gptel-tool-confirm (gptel-get-tool "Write"))
+                           directory "old.org" "new"))
+          (delete-file (expand-file-name "old.org" directory)))
+      (delete-directory directory t))))
+
 (ert-deftest gptel/reasoning-enabled-and-quote-face-styled ()
   (should (eq gptel-include-reasoning t))
   (should (equal (face-attribute 'org-quote :background) "#21242b"))
