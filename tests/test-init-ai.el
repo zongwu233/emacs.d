@@ -21,11 +21,16 @@
   (should (equal gptel-display-buffer-action
                  '(display-buffer-full-frame))))
 
-(ert-deftest gptel/session-buffers-use-visual-line-mode ()
+(ert-deftest gptel/session-buffers-use-full-width-soft-wrapping ()
   (with-temp-buffer
     (org-mode)
-    (run-hooks 'gptel-mode-hook)
-    (should visual-line-mode)))
+    (let ((visual-line-mode-hook
+           (cons 'visual-fill-column-mode visual-line-mode-hook)))
+      (run-hooks 'gptel-mode-hook))
+    (should visual-line-mode)
+    (should-not (bound-and-true-p visual-fill-column-mode))
+    (should-not visual-fill-column-center-text)
+    (should-not visual-fill-column-width)))
 
 (ert-deftest gptel/agent-confirms-destructive-bash-only ()
   (should (eq gptel-confirm-tool-calls 'auto))
@@ -50,13 +55,13 @@
           (delete-file (expand-file-name "old.org" directory)))
       (delete-directory directory t))))
 
-(ert-deftest gptel/reasoning-enabled-and-quote-face-styled ()
-  (should (eq gptel-include-reasoning t))
-  (should (equal (face-attribute 'org-quote :background) "#21242b"))
-  (should (equal (face-attribute 'org-quote :foreground) "#bbc2cf"))
-  (should (equal (face-attribute 'org-quote :box)
-                 '(:line-width 4 :color "#51afef")))
-  (should (eq (face-attribute 'org-quote :extend) t)))
+(ert-deftest gptel/response-face-is-defined-for-ai-output ()
+  (should (facep 'my/gptel-response-face))
+  (should (equal (face-attribute 'my/gptel-response-face :background)
+                 "#21242b"))
+  (should (equal (face-attribute 'my/gptel-response-face :foreground)
+                 "#bbc2cf"))
+  (should (eq (face-attribute 'my/gptel-response-face :extend) t)))
 
 (ert-deftest gptel/exit-save-writes-session-to-configured-directory ()
   (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
@@ -78,7 +83,7 @@
       (when (buffer-live-p buffer) (kill-buffer buffer))
       (delete-directory my/gptel-session-directory t))))
 
-(ert-deftest gptel/close-org-quote-inserts-end-at-response-end ()
+(ert-deftest gptel/close-org-quote-inserts-end-and-response-overlay ()
   (with-temp-buffer
     (org-mode)
     (insert "* Chat\n#+BEGIN_QUOTE\nhello")
@@ -87,7 +92,12 @@
       (insert "\n*** \n")                ; next prompt prefix, as gptel does
       (my/gptel-close-org-quote beg end)
       (should (equal (buffer-string)
-                     "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n\n*** \n")))))
+                     "* Chat\n#+BEGIN_QUOTE\nhello\n#+END_QUOTE\n\n*** \n"))
+      (goto-char (point-min))
+      (should (seq-some
+               (lambda (overlay)
+                 (eq (overlay-get overlay 'face) 'my/gptel-response-face))
+               (overlays-at (point)))))))
 
 (ert-deftest gptel/post-response-hooks-registered ()
   (should (memq #'my/gptel-close-org-quote gptel-post-response-functions))

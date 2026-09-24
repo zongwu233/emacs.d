@@ -16,6 +16,11 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   "Directory for gptel sessions saved when Emacs exits."
   :type 'directory)
 
+(defface my/gptel-response-face
+  '((t (:background "#21242b" :foreground "#bbc2cf" :extend t)))
+  "Background face applied to completed gptel responses."
+  :group 'gptel)
+
 (defun my/gptel-session-file-name (buffer)
   "Return a unique session filename for BUFFER."
   (let* ((name (replace-regexp-in-string
@@ -42,6 +47,43 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
+(defun my/gptel-close-org-quote (beg end)
+  "Close and style the Org quote block for response BEG through END.
+
+`gptel-post-response-functions' runs after the next prompt prefix is
+inserted, but END is locked to the response tail (see
+`gptel--handle-post-insert'), so this does not wrap the following prompt."
+  (when (and end beg (not (eq beg end)) (derived-mode-p 'org-mode))
+    (save-excursion
+      (goto-char end)
+      (unless (looking-at-p "[ \t]*#\\+END_QUOTE")
+        (unless (bolp) (insert "\n"))
+        (insert "#+END_QUOTE\n"))
+      (font-lock-ensure beg (point))
+      (let ((overlay (make-overlay beg (point) nil t)))
+        (overlay-put overlay 'face 'my/gptel-response-face)
+        (overlay-put overlay 'evaporate t)))))
+
+(defun my/gptel-setup-display ()
+  "Enable soft wrapping without constraining gptel buffers to fill-column."
+  (visual-line-mode 1)
+  (when (and (boundp 'visual-fill-column-mode)
+             visual-fill-column-mode)
+    (visual-fill-column-mode -1))
+  (when (boundp 'visual-fill-column-center-text)
+    (setq-local visual-fill-column-center-text nil))
+  (when (boundp 'visual-fill-column-width)
+    (setq-local visual-fill-column-width nil)))
+
+(defun my/gptel-plan ()
+  "Open a gptel-agent session with the planning preset."
+  (interactive)
+  (require 'project)
+  (gptel-agent (if-let ((proj (project-current)))
+                   (project-root proj)
+                 default-directory)
+               'gptel-plan))
+
 (defun my/gptel-agent-confirm-bash (command)
   "Ask before Bash COMMANDS with common destructive operations."
   (string-match-p
@@ -51,6 +93,7 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
 (defun my/gptel-agent-confirm-write (path filename _content)
   "Ask before the Write tool overwrites PATH/FILENAME."
   (file-exists-p (expand-file-name filename path)))
+
 (defun my/gptel-agent-configure-tool-confirmation ()
   "Allow routine agent tools and confirm destructive or privileged actions."
   (setq gptel-confirm-tool-calls 'auto)
@@ -74,28 +117,6 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
                                               ('include (gptel-tool-include tool)))
                                 append (list (intern (concat ":" (symbol-name slot))) value))
                        (list :confirm confirm)))))))
-(defun my/gptel-close-org-quote (beg end)
-  "Insert #+END_QUOTE at END, matching the org-mode response prefix.
-
-`gptel-post-response-functions' runs after the next prompt prefix is
-inserted, but END is locked to the response tail (see
-`gptel--handle-post-insert'), so this does not wrap the following prompt."
-  (when (and end beg (not (eq beg end)) (derived-mode-p 'org-mode))
-    (save-excursion
-      (goto-char end)
-      (unless (looking-at-p "[ \t]*#\\+END_QUOTE")
-        (unless (bolp) (insert "\n"))
-        (insert "#+END_QUOTE\n")))))
-
-(defun my/gptel-plan ()
-  "Open a gptel-agent session with the planning preset."
-  (interactive)
-  (require 'project)
-  (gptel-agent (if-let ((proj (project-current)))
-                   (project-root proj)
-                 default-directory)
-               'gptel-plan))
-
 (use-package gptel
   :ensure t
   :demand t
@@ -103,9 +124,9 @@ inserted, but END is locked to the response tail (see
   (gptel-default-mode 'org-mode)
   (gptel-include-reasoning t)
   (gptel-display-buffer-action '(display-buffer-full-frame))
-
   :config
   (require 'gptel-openai)
+
   ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
   ;; host on top and trips the api.openai.com check, building a responses backend
   ;; by mistake (see gptel-make-openai).
@@ -142,19 +163,14 @@ inserted, but END is locked to the response tail (see
   ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
   (put 'glm-5.3-flash :request-params '(:thinking (:type "disabled")))
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "#+BEGIN_QUOTE\n")
-  ;; Keep reasoning available from providers that return it; GLM thinking is
-  ;; disabled above because gptel expects reasoning before the final answer.
-  (set-face-attribute 'org-quote nil
-                      :background "#21242b"
-                      :foreground "#bbc2cf"
-                      :box '(:line-width 4 :color "#51afef")
-                      :extend t)
-  (add-hook 'gptel-mode-hook #'visual-line-mode)
+  ;; Org gives quote block boundaries their own faces, but not the response
+  ;; body.  Apply the dedicated face to the completed response region below.
   (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
   ;; add-hook prepends: last add runs first. end-of-response must see original
   ;; BEG/END before #+END_QUOTE is inserted.
   (add-hook 'gptel-post-response-functions #'my/gptel-close-org-quote)
   (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
+  (add-hook 'gptel-mode-hook #'my/gptel-setup-display)
   (add-hook 'after-init-hook
             (lambda ()
               (unless (or (getenv "ZHIPUAI_API_KEY") (getenv "DEEPSEEK_API_KEY"))
