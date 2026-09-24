@@ -2270,6 +2270,16 @@ inserted, but END is locked to the response tail (see
         (overlay-put overlay 'face 'my/gptel-response-face)
         (overlay-put overlay 'evaporate t)))))
 
+(defun my/gptel-restore-session-buffer ()
+  "Restore `gptel-mode' when visiting a saved gptel session."
+  (when (and buffer-file-name
+             (file-in-directory-p buffer-file-name my/gptel-session-directory)
+             (derived-mode-p 'org-mode 'markdown-mode 'text-mode)
+             (not (bound-and-true-p gptel-mode)))
+    (gptel-mode 1)))
+
+(add-hook 'find-file-hook #'my/gptel-restore-session-buffer)
+
 (defun my/gptel-setup-display ()
   "Enable soft wrapping without constraining gptel buffers to fill-column."
   (visual-line-mode 1)

@@ -32,6 +32,21 @@
     (should-not visual-fill-column-center-text)
     (should-not visual-fill-column-width)))
 
+(ert-deftest gptel/old-session-file-restores-display-mode ()
+  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
+         (file (expand-file-name "old-session.org" my/gptel-session-directory))
+         buffer)
+    (unwind-protect
+        (progn
+          (write-region "* Chat\n\n*** Prompt\n" nil file)
+          (setq buffer (find-file-noselect file))
+          (with-current-buffer buffer
+            (should gptel-mode)
+            (should visual-line-mode)
+            (should-not (bound-and-true-p visual-fill-column-mode))))
+      (when (buffer-live-p buffer) (kill-buffer buffer))
+      (delete-directory my/gptel-session-directory t))))
+
 (ert-deftest gptel/agent-confirms-destructive-bash-only ()
   (should (eq gptel-confirm-tool-calls 'auto))
   (should (my/gptel-agent-confirm-bash "rm -rf /tmp/example"))
