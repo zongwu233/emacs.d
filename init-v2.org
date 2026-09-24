@@ -2253,8 +2253,26 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
+(defun my/gptel-style-response-range (beg end)
+  "Apply the response face and quote bars to BEG through END."
+  (when (< beg end)
+    (let ((overlay (make-overlay beg end nil t))
+          (bar (propertize "│ " 'face 'my/gptel-response-face)))
+      (overlay-put overlay 'my/gptel-response t)
+      (overlay-put overlay 'face 'my/gptel-response-face)
+      (overlay-put overlay 'line-prefix bar)
+      (overlay-put overlay 'wrap-prefix bar)
+      (overlay-put overlay 'evaporate t))))
+
+(defun my/gptel-restore-response-styles ()
+  "Rebuild display-only response styles from gptel's restored text properties."
+  (when (and gptel-mode (fboundp 'gptel--get-buffer-bounds))
+    (remove-overlays nil nil 'my/gptel-response t)
+    (dolist (range (cdr (assq 'response (gptel--get-buffer-bounds))))
+      (my/gptel-style-response-range (car range) (cadr range)))))
+
 (defun my/gptel-close-org-quote (beg end)
-  "Close and style the Org quote block for response BEG through END.
+  "Close the Org quote block for response BEG through END and style it.
 
 `gptel-post-response-functions' runs after the next prompt prefix is
 inserted, but END is locked to the response tail (see
@@ -2266,9 +2284,7 @@ inserted, but END is locked to the response tail (see
         (unless (bolp) (insert "\n"))
         (insert "#+END_QUOTE\n"))
       (font-lock-ensure beg (point))
-      (let ((overlay (make-overlay beg (point) nil t)))
-        (overlay-put overlay 'face 'my/gptel-response-face)
-        (overlay-put overlay 'evaporate t)))))
+      (my/gptel-style-response-range beg (point)))))
 
 (defun my/gptel-open-session ()
   "Open a saved gptel session and let gptel restore its state."
@@ -2281,17 +2297,19 @@ inserted, but END is locked to the response tail (see
     (find-file (expand-file-name file my/gptel-session-directory))
     (gptel-mode 1)
     (current-buffer)))
-
 (defun my/gptel-setup-display ()
-  "Enable soft wrapping without constraining gptel buffers to fill-column."
+  "Enable window-width soft wrapping without visual-fill-column margins."
   (visual-line-mode 1)
+  (setq-local truncate-lines nil
+              word-wrap t)
   (when (and (boundp 'visual-fill-column-mode)
              visual-fill-column-mode)
     (visual-fill-column-mode -1))
   (when (boundp 'visual-fill-column-center-text)
     (setq-local visual-fill-column-center-text nil))
   (when (boundp 'visual-fill-column-width)
-    (setq-local visual-fill-column-width nil)))
+    (setq-local visual-fill-column-width nil))
+  (my/gptel-restore-response-styles))
 
 (defun my/gptel-plan ()
   "Open a gptel-agent session with the planning preset."
@@ -2370,9 +2388,6 @@ inserted, but END is locked to the response tail (see
     (gptel-make-openai "vllm"
       :host "localhost:8000"
       :stream t
-      :protocol "http"
-      :endpoint "/v1/chat/completions"
-      :key "EMPTY"
       :curl-args '("-H" "Accept-Encoding: identity")
       :models '(local-model)))
   (setq-default gptel-backend my/gptel-zhipu

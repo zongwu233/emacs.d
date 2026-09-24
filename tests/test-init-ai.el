@@ -24,22 +24,33 @@
 (ert-deftest gptel/session-buffers-use-full-width-soft-wrapping ()
   (with-temp-buffer
     (org-mode)
+    (setq-local truncate-lines t
+                word-wrap nil)
     (let ((visual-line-mode-hook
            (cons 'visual-fill-column-mode visual-line-mode-hook)))
       (run-hooks 'gptel-mode-hook))
     (should visual-line-mode)
+    (should-not truncate-lines)
+    (should word-wrap)
     (should-not (bound-and-true-p visual-fill-column-mode))
     (should-not visual-fill-column-center-text)
     (should-not visual-fill-column-width)))
 
-(ert-deftest gptel/open-session-restores-native-properties ()
+(ert-deftest gptel/open-session-restores-native-properties-and-styles ()
   (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
          (file (expand-file-name "old-session.org" my/gptel-session-directory))
          buffer)
     (unwind-protect
         (progn
           (write-region
-           ":PROPERTIES:\n:GPTEL_BACKEND: zhipu\n:GPTEL_MODEL: glm-5.3-flash\n:END:\n\n* Chat\n\n*** Prompt\n"
+           (concat ":PROPERTIES:\n"
+                   ":GPTEL_BACKEND: zhipu\n"
+                   ":GPTEL_MODEL: glm-5.3-flash\n"
+                   ":GPTEL_BOUNDS: ((response (1 44)))\n"
+                   ":END:\n\n"
+                   "* Chat\n#+BEGIN_QUOTE\n"
+                   "AI response line one\nAI response line two\n"
+                   "#+END_QUOTE\n\n*** Prompt\n")
            nil file)
           (cl-letf (((symbol-function 'completing-read)
                      (lambda (&rest _) "old-session.org")))
@@ -49,9 +60,33 @@
             (should (eq gptel-backend my/gptel-zhipu))
             (should (eq gptel-model 'glm-5.3-flash))
             (should visual-line-mode)
-            (should-not (bound-and-true-p visual-fill-column-mode))))
+            (should-not truncate-lines)
+            (should word-wrap)
+            (should-not (bound-and-true-p visual-fill-column-mode))
+            (let ((overlay (car (overlays-at (point-min)))))
+              (should (eq (overlay-get overlay 'face)
+                          'my/gptel-response-face))
+              (should (equal (substring-no-properties
+                              (overlay-get overlay 'line-prefix)) "│ ")))))
       (when (buffer-live-p buffer) (kill-buffer buffer))
       (delete-directory my/gptel-session-directory t))))
+
+(ert-deftest gptel/restored-response-bounds-rebuild-background-and-quote-bar ()
+  (with-temp-buffer
+    (org-mode)
+    (insert "AI response line one\nAI response line two\n")
+    (let ((start (point-min))
+          (end (point-max)))
+      (gptel--restore-props `((response (,start ,end))) )
+      (setq-local gptel-mode t)
+      (my/gptel-restore-response-styles)
+      (let ((overlay (car (overlays-at start))))
+        (should overlay)
+        (should (eq (overlay-get overlay 'face) 'my/gptel-response-face))
+        (should (equal (substring-no-properties
+                        (overlay-get overlay 'line-prefix)) "│ "))
+        (should (equal (substring-no-properties
+                        (overlay-get overlay 'wrap-prefix)) "│ "))))))
 
 (ert-deftest gptel/agent-confirms-destructive-bash-only ()
   (should (eq gptel-confirm-tool-calls 'auto))
