@@ -2218,8 +2218,8 @@ If you switch to a standard API key, change back to
 https://open.bigmodel.cn/api/paas/v4/chat/completions.")
 
 (defcustom my/gptel-session-directory
-  (locate-user-emacs-file "gptel-sessions/")
-  "Directory for gptel sessions saved when Emacs exits."
+  (expand-file-name "~/org/gptel/")
+  "Directory for gptel sessions shared by the user's Org workspace."
   :type 'directory)
 
 (defface my/gptel-response-face
@@ -2270,15 +2270,17 @@ inserted, but END is locked to the response tail (see
         (overlay-put overlay 'face 'my/gptel-response-face)
         (overlay-put overlay 'evaporate t)))))
 
-(defun my/gptel-restore-session-buffer ()
-  "Restore `gptel-mode' when visiting a saved gptel session."
-  (when (and buffer-file-name
-             (file-in-directory-p buffer-file-name my/gptel-session-directory)
-             (derived-mode-p 'org-mode 'markdown-mode 'text-mode)
-             (not (bound-and-true-p gptel-mode)))
-    (gptel-mode 1)))
-
-(add-hook 'find-file-hook #'my/gptel-restore-session-buffer)
+(defun my/gptel-open-session ()
+  "Open a saved gptel session and let gptel restore its state."
+  (interactive)
+  (unless (file-directory-p my/gptel-session-directory)
+    (user-error "No gptel session directory: %s" my/gptel-session-directory))
+  (let* ((files (directory-files my/gptel-session-directory nil
+                                 "\\.\\(org\\|md\\)\\'" t))
+         (file (completing-read "Open gptel session: " files nil t)))
+    (find-file (expand-file-name file my/gptel-session-directory))
+    (gptel-mode 1)
+    (current-buffer)))
 
 (defun my/gptel-setup-display ()
   "Enable soft wrapping without constraining gptel buffers to fill-column."
@@ -2426,6 +2428,7 @@ inserted, but END is locked to the response tail (see
 ;;; AI menu (SPC a)------------------------------------------------
 (+general-global-menu! "ai" "a"
   "s" 'gptel
+  "o" 'my/gptel-open-session
   "S" 'gptel-menu
   "a" 'gptel-agent
   "p" 'my/gptel-plan

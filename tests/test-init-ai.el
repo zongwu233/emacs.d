@@ -32,16 +32,22 @@
     (should-not visual-fill-column-center-text)
     (should-not visual-fill-column-width)))
 
-(ert-deftest gptel/old-session-file-restores-display-mode ()
+(ert-deftest gptel/open-session-restores-native-properties ()
   (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
          (file (expand-file-name "old-session.org" my/gptel-session-directory))
          buffer)
     (unwind-protect
         (progn
-          (write-region "* Chat\n\n*** Prompt\n" nil file)
-          (setq buffer (find-file-noselect file))
+          (write-region
+           ":PROPERTIES:\n:GPTEL_BACKEND: zhipu\n:GPTEL_MODEL: glm-5.3-flash\n:END:\n\n* Chat\n\n*** Prompt\n"
+           nil file)
+          (cl-letf (((symbol-function 'completing-read)
+                     (lambda (&rest _) "old-session.org")))
+            (setq buffer (my/gptel-open-session)))
           (with-current-buffer buffer
             (should gptel-mode)
+            (should (eq gptel-backend my/gptel-zhipu))
+            (should (eq gptel-model 'glm-5.3-flash))
             (should visual-line-mode)
             (should-not (bound-and-true-p visual-fill-column-mode))))
       (when (buffer-live-p buffer) (kill-buffer buffer))
