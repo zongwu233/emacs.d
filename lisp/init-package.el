@@ -13,8 +13,11 @@
 
 
 ;;; 安装最新 org 需要，这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
-;;(assq-delete-all 'org package--builtins)
-;;(assq-delete-all 'org package--builtin-versions)
+;; 让 package.el 不把内置 org 当作"已安装"：否则 Emacs 29 的内置 Org 9.6
+;; 永远不会升级，而 9.6 在字体化中调 org-fold-region 存在死循环 bug
+;; （GUI 打开 emphasis/link 密集的 org 文件会卡死，见 init-md.el 的 valign 说明）。
+(assq-delete-all 'org package--builtins)
+(assq-delete-all 'org package--builtin-versions)
 
 
 ;; Bootstrap `use-package'

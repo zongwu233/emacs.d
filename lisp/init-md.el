@@ -1,9 +1,15 @@
 ;;; init-md.el  -*- lexical-binding: t -*-
 
 ;; Pixel alignment for org/markdown tables
+;; 注意：valign 只给 markdown-mode 用。Emacs 29 内置的 Org 9.6 中
+;; `org-flag-region' 是 `org-fold-region' 的别名，org 的 font-lock matcher
+;; （links/emphasis/src block）每匹配一次就调一次它；valign 对该函数的 advice
+;; 会在展开时把 `fontified' 置 nil，令 jit-lock 无限重字体化——GUI 下打开含
+;; 较多 block/link 的 org 文件直接卡死（org-superstar 的全量字体化会立即触发）。
+;; org 表格需要时仍可手动 `M-x valign-region'。
 (use-package valign
   :ensure t
-  :hook ((markdown-mode org-mode) . valign-mode))
+  :hook (markdown-mode . valign-mode))
 
 ;; The markdown mode 
 (use-package markdown-mode

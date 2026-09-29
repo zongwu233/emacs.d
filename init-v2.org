@@ -171,8 +171,11 @@ quelpa 支持从源码方式安装 package。
 
 
 ;;; 安装最新 org 需要，这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
-;;(assq-delete-all 'org package--builtins)
-;;(assq-delete-all 'org package--builtin-versions)
+;; 让 package.el 不把内置 org 当作"已安装"：否则 Emacs 29 的内置 Org 9.6
+;; 永远不会升级，而 9.6 在字体化中调 org-fold-region 存在死循环 bug
+;; （GUI 打开 emphasis/link 密集的 org 文件会卡死，见 init-md.el 的 valign 说明）。
+(assq-delete-all 'org package--builtins)
+(assq-delete-all 'org package--builtin-versions)
 
 
 ;; Bootstrap `use-package'
@@ -1128,6 +1131,17 @@ org-mode 会尝试维护代码块的一致缩进。这在某些情境下可能�
     :hook (org-mode . org-superstar-mode)
     :config
     (setq org-superstar-special-todo-items t))
+  ;; org-superstar-mode 启用时会同步 font-lock-ensure 全量字体化，
+  ;; 与 jit-lock 对同一 buffer 的字体化竞态：GUI 下打开较大 org 文件
+  ;; 会概率性卡死（auth-source.org 已复现，Emacs 29.4 + org 9.6/9.8 均可）。
+  ;; 改为惰性重字体化，视觉效果不变、不再竞态。
+  (with-eval-after-load 'org-superstar
+    (defun my/org-superstar-fontify-buffer-lazy ()
+      "替代 org-superstar 的同步 font-lock-ensure，避免与 jit-lock 竞态卡死。"
+      (when (bound-and-true-p font-lock-mode)
+        (jit-lock-refontify)))
+    (advice-add 'org-superstar--fontify-buffer :override
+                #'my/org-superstar-fontify-buffer-lazy))
   ;; 
   (use-package evil-org
     :ensure t
@@ -2112,9 +2126,15 @@ markdown 文件配置相关
 ;;; init-md.el  -*- lexical-binding: t -*-
 
 ;; Pixel alignment for org/markdown tables
+;; 注意：valign 只给 markdown-mode 用。Emacs 29 内置的 Org 9.6 中
+;; `org-flag-region' 是 `org-fold-region' 的别名，org 的 font-lock matcher
+;; （links/emphasis/src block）每匹配一次就调一次它；valign 对该函数的 advice
+;; 会在展开时把 `fontified' 置 nil，令 jit-lock 无限重字体化——GUI 下打开含
+;; 较多 block/link 的 org 文件直接卡死（org-superstar 的全量字体化会立即触发）。
+;; org 表格需要时仍可手动 `M-x valign-region'。
 (use-package valign
   :ensure t
-  :hook ((markdown-mode org-mode) . valign-mode))
+  :hook (markdown-mode . valign-mode))
 
 ;; The markdown mode 
 (use-package markdown-mode

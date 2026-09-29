@@ -126,6 +126,17 @@
     :hook (org-mode . org-superstar-mode)
     :config
     (setq org-superstar-special-todo-items t))
+  ;; org-superstar-mode 启用时会同步 font-lock-ensure 全量字体化，
+  ;; 与 jit-lock 对同一 buffer 的字体化竞态：GUI 下打开较大 org 文件
+  ;; 会概率性卡死（auth-source.org 已复现，Emacs 29.4 + org 9.6/9.8 均可）。
+  ;; 改为惰性重字体化，视觉效果不变、不再竞态。
+  (with-eval-after-load 'org-superstar
+    (defun my/org-superstar-fontify-buffer-lazy ()
+      "替代 org-superstar 的同步 font-lock-ensure，避免与 jit-lock 竞态卡死。"
+      (when (bound-and-true-p font-lock-mode)
+        (jit-lock-refontify)))
+    (advice-add 'org-superstar--fontify-buffer :override
+                #'my/org-superstar-fontify-buffer-lazy))
   ;; 
   (use-package evil-org
     :ensure t
