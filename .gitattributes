@@ -1,0 +1,3 @@
+# 统一行尾：仓库内一律 LF，跨 Windows/WSL 同步不再出现 CRLF 噪音
+*.el text eol=lf
+*.org text eol=lf
