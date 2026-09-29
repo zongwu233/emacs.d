@@ -43,20 +43,6 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
         (set-visited-file-name (my/gptel-session-file-name buffer) t)
         (save-buffer)))))
 
-(defun my/gptel-warm-session (file)
-  "规避一个上游 redisplay 死循环：Emacs 29.4 GUI 下，每个新进程首次对
-gptel 会话文件激活 `gptel-mode' 时，恢复 GPTEL_BOUNDS 区域与首次字体化
-相互作用会让 redisplay 无限循环（同一进程第二次起永远正常）。
-因此在真实打开前，先用不可见 buffer 完成一次激活预热；预热若卡住由
-`with-timeout' 干净打断（此时一次性初始化已完成），真实打开即正常。"
-  (when (and (file-exists-p file) (not (get-file-buffer file)))
-    (with-timeout (6 nil)
-      (let ((b (find-file-noselect file)))
-        (with-current-buffer b
-          (unwind-protect
-              (progn (gptel-mode 1) (sit-for 1) (redisplay t))
-            (kill-buffer)))))))
-
 (defun my/gptel-open-session ()
   "Open a saved gptel session and let gptel restore its state."
   (interactive)
@@ -64,10 +50,8 @@ gptel 会话文件激活 `gptel-mode' 时，恢复 GPTEL_BOUNDS 区域与首次�
     (user-error "No gptel session directory: %s" my/gptel-session-directory))
   (let* ((files (directory-files my/gptel-session-directory nil
                                  "\\.\\(org\\|md\\)\\'" t))
-         (file (completing-read "Open gptel session: " files nil t))
-         (path (expand-file-name file my/gptel-session-directory)))
-    (my/gptel-warm-session path)
-    (find-file path)
+         (file (completing-read "Open gptel session: " files nil t)))
+    (find-file (expand-file-name file my/gptel-session-directory))
     (gptel-mode 1)
     (current-buffer)))
 (defun my/gptel-setup-display ()
