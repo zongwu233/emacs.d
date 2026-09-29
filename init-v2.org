@@ -2381,10 +2381,11 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   (gptel-default-mode 'org-mode)
   (gptel-include-reasoning t)
   (gptel-display-buffer-action '(display-buffer-full-frame))
-  ;; margin 方法会修改 window margin 引发全窗口重排；Emacs 29.4 GUI + org 9.x
-  ;; 下与 redisplay 相互作用可死循环卡死（auth-source.org 复现）。
-  ;; 改用 fringe：响应标记仍显示在左侧，但不改变窗口布局。
-  (gptel-highlight-methods '(fringe))
+  ;; fringe/margin 方法通过 line-prefix/wrap-prefix overlay 实现标记，
+  ;; 但首次激活后 redisplay 不会重算这些行的折行布局，导致 gptel 会话
+  ;; 文本不自动换行（切换 gptel-mode 强制重排版才恢复，Linux/Win 均复现）。
+  ;; 改用 face 方法：纯文本高亮，无 overlay 前缀，无此问题。
+  (gptel-highlight-methods '(face))
   (gptel-cache t)
   (gptel-use-header-line nil)
   :config
