@@ -1288,6 +1288,9 @@ Always returns a valid point. Compatible with older Org versions."
   ;; 中文英文混排的时候，自动换行问题
   ;; emacs 28 最新解决方案
   (setq word-wrap-by-category t)
+  ;; gptel-mode 首次激活会话文件时，字体化与 redisplay 相互触发会死循环
+  ;; （Emacs 29.4 GUI 实测）。把字体化挪到 idle 0.25s 后执行，避开竞态。
+  (setq jit-lock-defer-time 0.25)
 
   ;; 只显示标题
   (setq org-startup-folded 'content)
