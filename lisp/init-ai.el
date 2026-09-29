@@ -66,6 +66,9 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
     (setq-local visual-fill-column-center-text nil))
   (when (boundp 'visual-fill-column-width)
     (setq-local visual-fill-column-width nil))
+  ;; gptel-highlight 的 margin 方法会修改 window margin 引发全窗口重排，
+  ;; Emacs 29.4 GUI 下与 redisplay 相互作用可死循环（auth-source.org 复现）。
+  ;; 改用 fringe（highlight--decorate 的 fringe 路径实测稳定），标记视觉保留。
   (gptel-highlight-mode 1)
   (make-local-variable 'mode-line-misc-info)
   (add-to-list 'mode-line-misc-info
@@ -123,7 +126,10 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   (gptel-default-mode 'org-mode)
   (gptel-include-reasoning t)
   (gptel-display-buffer-action '(display-buffer-full-frame))
-  (gptel-highlight-methods '(margin))
+  ;; margin 方法会修改 window margin 引发全窗口重排；Emacs 29.4 GUI + org 9.x
+  ;; 下与 redisplay 相互作用可死循环卡死（auth-source.org 复现）。
+  ;; 改用 fringe：响应标记仍显示在左侧，但不改变窗口布局。
+  (gptel-highlight-methods '(fringe))
   (gptel-cache t)
   (gptel-use-header-line nil)
   :config

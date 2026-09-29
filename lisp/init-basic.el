@@ -31,7 +31,10 @@
 
 ;; emacs >= 26  开启行号可以这么设置
 (global-display-line-numbers-mode 1)
-(setq-default display-line-numbers-width-start t)
+;; 注意：不要设置 display-line-numbers-width-start=t。
+;; 它会在每次 redisplay 时预计算最宽行号宽度，与 org 9.x 的字体化/覆盖层
+;; 在 GUI 下（point 位于文件末尾时最明显）形成死循环卡死（Emacs 29.4 实测）。
+;; 行号列宽度使用默认的动态调整即可。
 
 ;; 关闭工具栏，tool-bar-mode 即为一个 Minor Mode
 (tool-bar-mode -1)

@@ -13,11 +13,13 @@
 
 
 ;;; 安装最新 org 需要，这个配置一定要配置在 use-package 的初始化之前，否则无法正常安装
-;; 让 package.el 不把内置 org 当作"已安装"：否则 Emacs 29 的内置 Org 9.6
-;; 永远不会升级，而 9.6 在字体化中调 org-fold-region 存在死循环 bug
-;; （GUI 打开 emphasis/link 密集的 org 文件会卡死，见 init-md.el 的 valign 说明）。
-(assq-delete-all 'org package--builtins)
-(assq-delete-all 'org package--builtin-versions)
+;; 注意（2026-09）：务必保持注释状态！
+;; 实测 org 9.8.10 在 Emacs 29.4 GUI 下存在 redisplay 死循环：
+;; org buffer 中 point 位于文件末尾（最后一行是标题）时打开/滚动即卡死
+;; （auth-source.org 复现）。在 upstream 修复并发布新版本之前，
+;; 不要通过这两行让 package.el 升级内置 org。
+;;(assq-delete-all 'org package--builtins)
+;;(assq-delete-all 'org package--builtin-versions)
 
 
 ;; Bootstrap `use-package'

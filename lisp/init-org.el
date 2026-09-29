@@ -113,9 +113,14 @@
     (add-hook 'evil-insert-state-entry-hook #'org-appear-manual-start nil t)
     (add-hook 'evil-insert-state-exit-hook #'org-appear-manual-stop nil t))
 
+  ;; org-appear-20240716 与 org 9.8 的新 element API 不兼容：
+  ;; post-command-hook 里报 (wrong-type-argument number-or-marker-p nil)，
+  ;; 且 toggle 中途报错会给 buffer 留下不一致的 invisible 属性，可诱发 redisplay 卡死。
+  ;; org-appear 上游尚无适配 9.8 的版本，先按 org 版本门控。
   (use-package org-appear
     :ensure t
     :after org
+    :if (version< (org-version) "9.8")
     :hook (org-mode . org-appear-mode)
     :init
     (setq org-appear-trigger 'manual)
@@ -137,7 +142,19 @@
         (jit-lock-refontify)))
     (advice-add 'org-superstar--fontify-buffer :override
                 #'my/org-superstar-fontify-buffer-lazy))
-  ;; 
+  ;; org 9.6/9.8：若 org 文件以标题行结尾且没有结尾换行，GUI 下 point 位于
+  ;; EOB 时字体化/redisplay 会死循环卡死（auth-source.org 实测复现）。
+  ;; init-basic 里全局关闭了 require-final-newline，这里对 org buffer 单独强制。
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (setq-local require-final-newline t)))
+  ;; Emacs 29.4 + org 9.8：org buffer 中 display-line-numbers 与 org 的
+  ;; fold/emphasis overlay 在 redisplay 时相互失效，间歇性死循环卡死
+  ;; （统计复现：开行号约 1/4 概率冻结，关行号 0/N）。org 文档基本不需要行号。
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (display-line-numbers-mode -1)))
+  ;;
   (use-package evil-org
     :ensure t
     ;; 这里会使得 org mode 文件进入 evil-emacs-state ，就是原生 emacs 模式
