@@ -33,7 +33,7 @@
   ;; When Emacs runs in terminal, show the indicators in margin instead.
   (unless (display-graphic-p)
     (diff-hl-margin-mode))
-  ;; diff-hl 与 display-line-numbers 同时开启时，org 9.8 的 buffer
+  ;; diff-hl 与 display-line-numbers 同开时，org 9.8 的 buffer
   ;; （point 位于 EOB、含 CJK 内容）会触发 redisplay 死循环卡死。
   ;; 且 org 目录通常不在 git 仓库里，diff-hl 在 org buffer 没有意义，直接跳过。
   (defun my/turn-on-diff-hl-mode-skip-org (orig &rest args)
