@@ -1,5 +1,5 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
-;;; init-ai-local.el --- glue for the external ai-agent-in-emacs repo -*- lexical-binding: t; -*-
+;;; init-ai.el --- glue for the external ai-agent-in-emacs repo -*- lexical-binding: t; -*-
 
 ;; 通用实现在 https://github.com/zongwu233/ai-agent-in-emacs 的 init-ai.el，
 ;; 本文件不重复其逻辑；仓库 clone 到 site-lisp/ 下，缺失时自动 shallow clone。
@@ -13,11 +13,12 @@
   (unless (zerop (shell-command
                   (format "git clone --depth 1 %s %s"
                           my/ai-repo-url (shell-quote-argument my/ai-repo-dir))))
-    (user-error "init-ai-local: failed to clone %s; clone it into %s manually"
+    (user-error "init-ai: failed to clone %s; clone it into %s manually"
                 my/ai-repo-url my/ai-repo-dir)))
-(add-to-list 'load-path my/ai-repo-dir)
 
-(require 'init-ai)
+;; 不能 (require 'init-ai)：本文件与其同名同 feature，且 lisp/ 在 load-path
+;; 上更靠前，require 会再次命中本文件造成递归加载。按绝对路径显式 load。
+(load (expand-file-name "init-ai.el" my/ai-repo-dir) nil t)
 
 ;; 个人 relay providers：host 即 ~/.authinfo 的 machine 字段，login 选择条目，
 ;; password 即 API key。追加到仓库默认注册表（zhipu）之后并重建 backends。
@@ -81,5 +82,5 @@
   "C" 'gptel-agent-compact
   "i" 'minuet-show-suggestion)
 
-(provide 'init-ai-local)
-;;; init-ai-local.el ends here
+(provide 'init-ai)
+;;; init-ai.el ends here
