@@ -15,10 +15,10 @@
                           my/ai-repo-url (shell-quote-argument my/ai-repo-dir))))
     (user-error "init-ai: failed to clone %s; clone it into %s manually"
                 my/ai-repo-url my/ai-repo-dir)))
+(add-to-list 'load-path my/ai-repo-dir)
 
-;; 不能 (require 'init-ai)：本文件与其同名同 feature，且 lisp/ 在 load-path
-;; 上更靠前，require 会再次命中本文件造成递归加载。按绝对路径显式 load。
-(load (expand-file-name "init-ai.el" my/ai-repo-dir) nil t)
+;; 仓库模块的 feature 是 init-ai-agent（本文件才是 init-ai），直接 require。
+(require 'init-ai-agent)
 
 ;; 个人 relay providers：host 即 ~/.authinfo 的 machine 字段，login 选择条目，
 ;; password 即 API key。追加到仓库默认注册表（zhipu）之后并重建 backends。

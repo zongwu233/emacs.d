@@ -2254,7 +2254,7 @@ markdown 文件配置相关
 
 
 *** init-ai.el
-本地胶水文件，与仓库模块同名（都提供 init-ai）。AI 模块已剥离为独立仓库 [[https://github.com/zongwu233/ai-agent-in-emacs][ai-agent-in-emacs]]（gptel + gptel-agent + gptel-preset-collection + minuet），clone 到 `~/.emacs.d/site-lisp/ai-agent-in-emacs/`，缺失时首次加载自动 clone。通用部分（多 provider registry、authinfo 取 key、session 管理、agent 工具确认）在仓库内维护，本文件只保留本地特有内容：仓库 clone 与按路径加载、个人 relay providers（对应 ~/.authinfo 条目，密钥只在 authinfo/环境变量里）、SPC a 菜单。默认 provider 仍是智谱 GLM（仓库默认注册表自带，读 ZHIPUAI_API_KEY）。
+本地胶水文件（feature 为 init-ai）。AI 模块已剥离为独立仓库 [[https://github.com/zongwu233/ai-agent-in-emacs][ai-agent-in-emacs]]（gptel + gptel-agent + gptel-preset-collection + minuet），仓库模块 feature 为 init-ai-agent，clone 到 `~/.emacs.d/site-lisp/ai-agent-in-emacs/`，缺失时首次加载自动 clone。通用部分（多 provider registry、authinfo 取 key、session 管理、agent 工具确认）在仓库内维护，本文件只保留本地特有内容：仓库 clone 与按路径加载、个人 relay providers（对应 ~/.authinfo 条目，密钥只在 authinfo/环境变量里）、SPC a 菜单。默认 provider 仍是智谱 GLM（仓库默认注册表自带，读 ZHIPUAI_API_KEY）。
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-ai.el
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 ;;; init-ai.el --- glue for the external ai-agent-in-emacs repo -*- lexical-binding: t; -*-
@@ -2273,10 +2273,10 @@ markdown 文件配置相关
                           my/ai-repo-url (shell-quote-argument my/ai-repo-dir))))
     (user-error "init-ai: failed to clone %s; clone it into %s manually"
                 my/ai-repo-url my/ai-repo-dir)))
+(add-to-list 'load-path my/ai-repo-dir)
 
-;; 不能 (require 'init-ai)：本文件与其同名同 feature，且 lisp/ 在 load-path
-;; 上更靠前，require 会再次命中本文件造成递归加载。按绝对路径显式 load。
-(load (expand-file-name "init-ai.el" my/ai-repo-dir) nil t)
+;; 仓库模块的 feature 是 init-ai-agent（本文件才是 init-ai），直接 require。
+(require 'init-ai-agent)
 
 ;; 个人 relay providers：host 即 ~/.authinfo 的 machine 字段，login 选择条目，
 ;; password 即 API key。追加到仓库默认注册表（zhipu）之后并重建 backends。
