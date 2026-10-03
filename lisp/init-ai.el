@@ -1,15 +1,170 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 ;;; init-ai.el --- AI coding features -*- lexical-binding: t; -*-
 
-;; gptel + gptel-agent + gptel-preset-collection. Default backend is Zhipu GLM
-;; (coding-plan endpoint). Dedicated chat buffers use Org and gptel's margin
-;; response highlight. Inline completion is minuet on the same GLM endpoint.
+;; gptel + gptel-agent + gptel-preset-collection. Backends are generated from
+;; `my/ai-providers'. Provider hosts are the machine fields of ~/.authinfo
+;; (machine = API base_url host, login = entry, password = API key); only zhipu
+;; (no authinfo entry) reads its key from the environment. Dedicated chat
+;; buffers use Org and gptel's response highlight. Inline completion is minuet
+;; on the same GLM endpoint.
 
 (defconst my/gptel-zhipu-endpoint
   "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions"
   "Zhipu GLM coding-plan endpoint (the local account is on zhipu-coding-plan).
 If you switch to a standard API key, change back to
 https://open.bigmodel.cn/api/paas/v4/chat/completions.")
+
+(defvar my/ai-backends nil
+  "Provider name -> gptel backend, built by `my/ai-build-backends'.")
+
+(defcustom my/ai-providers
+  '((zhipu
+     :host "open.bigmodel.cn"
+     :endpoint "/api/coding/paas/v4/chat/completions"
+     :auth (:env "ZHIPUAI_API_KEY")
+     :models (glm-5.3-flash glm-4.6 glm-4.5 glm-4.5-air glm-4.5-flash)
+     :default glm-5.3-flash)
+    (deepseek
+     :host "RELAY.EXAMPLE" :login "deepseek-REDACTED"
+     :models (deepseek-v4.1-flash deepseek-v4.1-flash-0910
+              deepseek-v4-flash deepseek-v4-flash-0731
+              deepseek-v4-pro deepseek-v4-pro-0813)
+     :default deepseek-v4.1-flash)
+    (gemini
+     :host "RELAY.EXAMPLE" :login "gemini-REDACTED"
+     :models (gemini-3.1-pro gemini-3.1-pro-high gemini-3.1-pro-low
+              gemini-3.1-flash-lite gemini-3.5-flash
+              gemini-3-pro-high gemini-3-pro-preview gemini-3-flash
+              claude-sonnet-4-6 claude-opus-4-6-thinking)
+     :default gemini-3.1-pro)
+    (grok
+     :host "RELAY.EXAMPLE" :login "xai-REDACTED"
+     :models (grok-4.5-latest grok-4.5 grok-4.3-latest grok-4.3
+              grok-4.20-reasoning grok-4.20-non-reasoning
+              grok-4.20-multi-agent-latest grok-3-mini grok-3-mini-fast)
+     :default grok-4.5-latest)
+    (gpt
+     :host "RELAY.EXAMPLE" :login "openai-REDACTED"
+     :models (gpt-6 gpt-6-astra gpt-6-astra-direct gpt-6-sol gpt-6.1-sol
+              gpt-5.6 gpt-5.6-sol gpt-5.6-terra gpt-5.5
+              gpt-5.4 gpt-5.4-mini gpt-5.3-codex-spark)
+     :default gpt-5.6)
+    (gpt-REDACTED
+     :host "RELAY.EXAMPLE" :login "REDACTED"
+     :models (gpt-6 gpt-6-astra gpt-6-luna gpt-6-sol
+              gpt-5.6 gpt-5.6-sol gpt-5.6-terra gpt-5.5
+              gpt-5.4 gpt-5.4-mini gpt-5.3-codex-spark)
+     :default gpt-5.6)
+    (gpt-REDACTED
+     :host "RELAY.EXAMPLE" :login "REDACTED"
+     :models (chat-latest gpt-6.1-sol gpt-6-astra gpt-6-luna gpt-6-sol
+              gpt-5.6-luna gpt-5.6-sol gpt-5.6-terra gpt-5.5 gpt-4.1-mini)
+     :default gpt-5.5)
+    (REDACTED
+     :host "LOCAL.EXAMPLE" :login "REDACTED"
+     ;; Probe 2026-09-30: /v1/models returned empty and chat answered
+     ;; 401 Invalid API Key. Fill :models once the key works.
+     :models nil)
+    (local
+     :host "localhost:9000" :login "REDACTED" :protocol "http"
+     :models (local-model)
+     :default local-model))
+  "AI provider registry; `my/ai-build-backends' makes one backend per entry.
+:host     API base_url host = the machine field of ~/.authinfo.
+:login    authinfo login whose password is the API key.
+:auth     (:env VAR) reads the key from VAR (zhipu has no authinfo entry).
+:endpoint chat path, default \"/v1/chat/completions\" (OpenAI-compatible).
+:protocol \"https\" (default) or \"http\" for local servers.
+:models   model symbols offered in the menu.
+:default  preselected model."
+  :type '(repeat (cons symbol plist)))
+
+(defun my/ai-provider-spec (name)
+  "Return the `my/ai-providers' plist of provider NAME."
+  (cdr (assq name my/ai-providers)))
+
+(defun my/ai-backend (name)
+  "Return the gptel backend built for provider NAME, or nil."
+  (alist-get name my/ai-backends))
+
+(defun my/ai-provider-default-model (name)
+  "Default model symbol configured for provider NAME."
+  (let ((spec (my/ai-provider-spec name)))
+    (or (plist-get spec :default)
+        (car (plist-get spec :models)))))
+
+(defun my/ai-provider-key (spec)
+  "Resolve the API key of provider SPEC, or nil.
+The :auth environment variable wins, then the authinfo password of
+:login on :host (see `auth-source-search')."
+  (or (when-let ((var (plist-get (plist-get spec :auth) :env)))
+        (getenv var))
+      (when-let ((login (plist-get spec :login)))
+        (require 'auth-source)
+        (let* ((entry (car (auth-source-search
+                            :max 1
+                            :host (plist-get spec :host)
+                            :user login
+                            :require '(:secret))))
+               (secret (plist-get entry :secret)))
+          (cond ((functionp secret) (funcall secret))
+                ((stringp secret) secret))))))
+
+(defun my/ai-build-backends ()
+  "Register one OpenAI-compatible gptel backend per `my/ai-providers' entry.
+Every configured provider exposes an OpenAI-compatible /v1 API, so a
+single backend type covers them all."
+  (setq my/ai-backends nil)
+  (dolist (entry my/ai-providers)
+    (let ((name (car entry))
+          (spec (cdr entry)))
+      (push
+       (cons name
+             (gptel-make-openai
+                 (symbol-name name)
+               :host (plist-get spec :host)
+               :protocol (or (plist-get spec :protocol) "https")
+               :stream t
+               :endpoint (or (plist-get spec :endpoint)
+                             "/v1/chat/completions")
+               ;; gptel 的默认 --compressed 协商 gzip；部分服务器压缩缓冲区
+               ;; 填满才 flush，SSE 会整块到达。
+               :curl-args '("-H" "Accept-Encoding: identity")
+               :key (lambda () (my/ai-provider-key spec))
+               :models (plist-get spec :models)))
+       my/ai-backends)))
+  (setq my/ai-backends (nreverse my/ai-backends)))
+
+(defun my/ai-check-keys ()
+  "Report providers whose API key cannot be resolved."
+  (let ((missing (cl-loop for (name . spec) in my/ai-providers
+                          unless (my/ai-provider-key spec)
+                          collect name)))
+    (when missing
+      (message "init-ai: no API key resolved for: %s"
+               (mapconcat #'symbol-name missing ", ")))))
+
+(defun my/ai-select-provider (provider)
+  "Prompt for PROVIDER and a model, then set them as the gptel default.
+Affects new gptel sessions; `gptel-menu' switches per buffer."
+  (interactive
+   (list (intern
+          (completing-read "AI provider: "
+                           (mapcar (lambda (e) (symbol-name (car e)))
+                                   my/ai-backends)
+                           nil t))))
+  (let ((backend (my/ai-backend provider)))
+    (unless backend
+      (user-error "No AI provider backend: %s" provider))
+    (let* ((models (mapcar #'symbol-name (gptel-backend-models backend)))
+           (default (my/ai-provider-default-model provider))
+           (model (completing-read
+                   (format "Model for %s: " provider)
+                   models nil t nil nil
+                   (and (member default models) default))))
+      (setq-default gptel-backend backend
+                    gptel-model (intern model))
+      (message "init-ai: default provider %s, model %s" provider model))))
 
 (defcustom my/gptel-session-directory
   (expand-file-name "~/org/gptel/")
@@ -140,31 +295,8 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   ;; gptel requires host/path separation: a full-URL :endpoint stacks the default
   ;; host on top and trips the api.openai.com check, building a responses backend
   ;; by mistake (see gptel-make-openai).
-  (defvar my/gptel-zhipu
-    (gptel-make-openai "zhipu"
-      :host "open.bigmodel.cn"
-      :stream t
-      :endpoint "/api/coding/paas/v4/chat/completions"
-      ;; gptel's default --compressed negotiates gzip; some servers only flush
-      ;; once the compressed buffer fills, so SSE arrives in one lump.
-      :curl-args '("-H" "Accept-Encoding: identity")
-      :key (lambda () (or (getenv "ZHIPUAI_API_KEY") "MISSING-ZHIPUAI-API-KEY"))
-      :models '(glm-5.3-flash glm-4.6 glm-4.5 glm-4.5-air glm-4.5-flash)))
-  (defvar my/gptel-deepseek
-    (gptel-make-openai "deepseek"
-      :host "api.deepseek.com"
-      :stream t
-      :endpoint "/v1/chat/completions"
-      :curl-args '("-H" "Accept-Encoding: identity")
-      :key (lambda () (or (getenv "DEEPSEEK_API_KEY") "MISSING-DEEPSEEK-API-KEY"))
-      :models '(deepseek-chat deepseek-reasoner)))
-  (defvar my/gptel-vllm
-    (gptel-make-openai "vllm"
-      :host "localhost:8000"
-      :stream t
-      :curl-args '("-H" "Accept-Encoding: identity")
-      :models '(local-model)))
-  (setq-default gptel-backend my/gptel-zhipu
+  (my/ai-build-backends)
+  (setq-default gptel-backend (my/ai-backend 'zhipu)
                 gptel-model 'glm-5.3-flash)
   ;; GLM 5.x thinks in interleaved mode; gptel's block parsing assumes reasoning
   ;; only precedes the answer. Disable thinking via Zhipu's official parameter.
@@ -172,10 +304,7 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   (add-hook 'kill-emacs-hook #'my/gptel-save-unsaved-sessions-on-exit)
   (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
   (add-hook 'gptel-mode-hook #'my/gptel-setup-display)
-  (add-hook 'after-init-hook
-            (lambda ()
-              (unless (or (getenv "ZHIPUAI_API_KEY") (getenv "DEEPSEEK_API_KEY"))
-                (message "init-ai: ZHIPUAI_API_KEY / DEEPSEEK_API_KEY not set, AI features unavailable")))))
+  (add-hook 'after-init-hook #'my/ai-check-keys))
 
 (use-package gptel-agent
   :ensure t
@@ -213,12 +342,13 @@ https://open.bigmodel.cn/api/paas/v4/chat/completions.")
   "s" 'gptel
   "o" 'my/gptel-open-session
   "S" 'gptel-menu
+  "P" 'my/ai-select-provider
   "a" 'gptel-agent
   "p" 'my/gptel-plan
   "C" 'gptel-agent-compact
   "i" 'minuet-show-suggestion)
 
-(defconst my/gptel-init-version "1.0-gptel"
+(defconst my/gptel-init-version "2.0-multi-provider"
   "Config version probe: after restarting Emacs, M-: my/gptel-init-version should show this value.")
 
 (provide 'init-ai)

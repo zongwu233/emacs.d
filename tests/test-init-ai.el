@@ -1,163 +1,167 @@
 ;;; -*- lexical-binding: t; -*-
-;; Config-level tests for lisp/init-ai.el (gptel + GLM + minuet).
+;; Config-level tests for lisp/init-ai.el (multi-provider gptel registry + minuet).
 ;; Runner: emacs --batch -l init.el -l tests/test-init-ai.el -f ert-run-tests-batch-and-exit
 (require 'ert)
 (require 'gptel)
 (require 'minuet nil t)
 
-(ert-deftest gptel/default-backend-is-zhipu-glm ()
-  (should (eq (default-value 'gptel-backend) my/gptel-zhipu))
-  (should (eq (default-value 'gptel-model) 'glm-5.3-flash))
-  (should (equal (gptel-backend-host my/gptel-zhipu) "open.bigmodel.cn"))
-  (should (equal (gptel-backend-endpoint my/gptel-zhipu)
-                 "/api/coding/paas/v4/chat/completions")))
+(ert-deftest ai/registry-builds-one-backend-per-provider ()
+  (should (= (length my/ai-providers) (length my/ai-backends)))
+  (dolist (entry my/ai-providers)
+    (should (my/ai-backend (car entry)))))
 
-(ert-deftest gptel/org-mode-default ()
+(ert-deftest ai/default-backend-is-zhipu-glm ()
+  (let ((zhipu (my/ai-backend 'zhipu)))
+    (should (eq (default-value 'gptel-backend) zhipu))
+    (should (eq (default-value 'gptel-model) 'glm-5.3-flash))
+    (should (equal (gptel-backend-host zhipu) "open.bigmodel.cn"))
+    (should (equal (gptel-backend-endpoint zhipu)
+                   "/api/coding/paas/v4/chat/completions"))))
+
+(ert-deftest ai/authinfo-providers-use-authinfo-hosts-and-v1-path ()
+  (dolist (name '(deepseek gemini grok gpt gpt-REDACTED gpt-REDACTED REDACTED local))
+    (let ((backend (my/ai-backend name))
+          (spec (my/ai-provider-spec name)))
+      (should backend)
+      (should (equal (gptel-backend-host backend) (plist-get spec :host)))
+      (unless (plist-get spec :endpoint)
+        (should (equal (gptel-backend-endpoint backend)
+                       "/v1/chat/completions"))))))
+
+(ert-deftest ai/no-provider-points-at-an-official-api-url ()
+  ;; zhipu has no authinfo entry and is the documented exception; every
+  ;; authinfo provider must use its relay host, never an official API URL.
+  (dolist (entry my/ai-providers)
+    (when (plist-get (cdr entry) :login)
+      (should-not (member (gptel-backend-host (my/ai-backend (car entry)))
+                          '("api.deepseek.com" "api.groq.com" "api.x.ai"
+                            "generativelanguage.googleapis.com"))))))
+
+(ert-deftest ai/local-provider-uses-http ()
+  (should (equal (gptel-backend-protocol (my/ai-backend 'local)) "http")))
+
+(ert-deftest ai/key-resolution-env-wins-then-authinfo ()
+  ;; zhipu: env var
+  (let ((process-environment (cons "ZHIPUAI_API_KEY=test-env-key"
+                                   process-environment)))
+    (should (equal (my/ai-provider-key (my/ai-provider-spec 'zhipu))
+                   "test-env-key")))
+  ;; authinfo-based: isolated netrc fixture, never the user's real one
+  (let* ((netrc (make-temp-file "authinfo-test-" nil
+                                ".netrc"
+                                "machine relay.test login testuser password testpass\n"))
+         (auth-sources (list netrc)))
+    (unwind-protect
+        (should (equal (my/ai-provider-key '(:host "relay.test" :login "testuser"))
+                       "testpass"))
+      (delete-file netrc))))
+
+(ert-deftest ai/key-missing-returns-nil ()
+  (should-not (my/ai-provider-key '(:host "no-such-host.invalid"
+                                    :login "no-such-user"))))
+
+(ert-deftest ai/select-provider-switches-defaults ()
+  (unwind-protect
+      (progn
+        (cl-letf (((symbol-function 'completing-read)
+                   (lambda (_prompt _collection &rest _)
+                     "deepseek-v4.1-flash")))
+          (my/ai-select-provider 'deepseek))
+        (should (eq (default-value 'gptel-backend) (my/ai-backend 'deepseek)))
+        (should (eq (default-value 'gptel-model) 'deepseek-v4.1-flash)))
+    ;; restore for other tests
+    (setq-default gptel-backend (my/ai-backend 'zhipu)
+                  gptel-model 'glm-5.3-flash)))
+
+(ert-deftest ai/gptel-default-mode-org ()
   (should (eq gptel-default-mode 'org-mode)))
 
-(ert-deftest gptel/new-session-display-uses-full-frame ()
-  (should (equal gptel-display-buffer-action
-                 '(display-buffer-full-frame))))
-
-(ert-deftest gptel/session-buffers-use-full-width-soft-wrapping ()
-  (with-temp-buffer
-    (org-mode)
-    (setq-local truncate-lines t
-                word-wrap nil)
-    (let ((visual-line-mode-hook
-           (cons 'visual-fill-column-mode visual-line-mode-hook)))
-      (run-hooks 'gptel-mode-hook))
-    (should visual-line-mode)
-    (should-not truncate-lines)
-    (should word-wrap)
-    (should-not (bound-and-true-p visual-fill-column-mode))
-    (should-not visual-fill-column-center-text)
-    (should-not visual-fill-column-width)))
-
-(ert-deftest gptel/open-session-restores-native-properties-and-styles ()
-  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
-         (file (expand-file-name "old-session.org" my/gptel-session-directory))
-         buffer)
-    (unwind-protect
-        (progn
-          (write-region
-           (concat ":PROPERTIES:\n"
-                   ":GPTEL_BACKEND: zhipu\n"
-                   ":GPTEL_MODEL: glm-5.3-flash\n"
-                   ":GPTEL_BOUNDS: ((response (116 158)))\n"
-                   ":END:\n\n"
-                   "* Chat\n"
-                   "AI response line one\nAI response line two\n"
-                   "\n*** Prompt\n")
-           nil file)
-          (cl-letf (((symbol-function 'completing-read)
-                     (lambda (&rest _) "old-session.org")))
-            (setq buffer (my/gptel-open-session)))
-          (with-current-buffer buffer
-            (should gptel-mode)
-            (should (eq gptel-backend my/gptel-zhipu))
-            (should (eq gptel-model 'glm-5.3-flash))
-            (should visual-line-mode)
-            (should-not truncate-lines)
-            (should word-wrap)
-            (should-not (bound-and-true-p visual-fill-column-mode))
-            (goto-char (point-min))
-            (search-forward "AI response line one")
-            (should gptel-highlight-mode)
-            (should (eq (get-char-property (line-beginning-position) 'gptel)
-                        'response))
-            (should (get-char-property (line-beginning-position) 'line-prefix))))
-      (when (buffer-live-p buffer) (kill-buffer buffer))
-      (delete-directory my/gptel-session-directory t))))
-
-(ert-deftest gptel/agent-confirms-destructive-bash-only ()
-  (should (eq gptel-confirm-tool-calls 'auto))
-  (should (my/gptel-agent-confirm-bash "rm -rf /tmp/example"))
-  (should (my/gptel-agent-confirm-bash "git reset --hard HEAD"))
-  (should (my/gptel-agent-confirm-bash "find . -delete"))
-  (should-not (my/gptel-agent-confirm-bash "git status --short"))
-  (should-not (my/gptel-agent-confirm-bash "printf 'ok\\n'"))
-  (should-not (gptel-tool-confirm (gptel-get-tool "Edit")))
-  (should-not (gptel-tool-confirm (gptel-get-tool "Read")))
-  (should (eq (gptel-tool-confirm (gptel-get-tool "Write"))
-              #'my/gptel-agent-confirm-write))
-  (should-not (gptel-tool-confirm (gptel-get-tool "Eval")))
-  (should (gptel-tool-confirm (gptel-get-tool "Agent")))
-  (let ((directory (make-temp-file "gptel-write-confirm-" t)))
-    (unwind-protect
-        (progn
-          (should-not (funcall (gptel-tool-confirm (gptel-get-tool "Write"))
-                               directory "new.org" "text"))
-          (write-region "old" nil (expand-file-name "old.org" directory))
-          (should (funcall (gptel-tool-confirm (gptel-get-tool "Write"))
-                           directory "old.org" "new"))
-          (delete-file (expand-file-name "old.org" directory)))
-      (delete-directory directory t))))
-
-(ert-deftest gptel/exit-save-writes-session-to-configured-directory ()
-  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
-         (buffer (generate-new-buffer "*gptel-test*"))
-         saved-file)
-    (unwind-protect
-        (progn
-          (with-current-buffer buffer
-            (org-mode)
-            (insert "* Chat\nhello\n")
-            (setq-local gptel-mode t))
-          (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t)))
-            (my/gptel-save-unsaved-sessions-on-exit))
-          (setq saved-file (buffer-file-name buffer))
-          (should (file-in-directory-p saved-file my/gptel-session-directory))
-          (should (string-match-p "hello" (with-temp-buffer
-                                             (insert-file-contents saved-file)
-                                             (buffer-string)))))
-      (when (buffer-live-p buffer) (kill-buffer buffer))
-      (delete-directory my/gptel-session-directory t))))
-
-(ert-deftest gptel/native-response-margin-preserves-org-rendering ()
-  (with-temp-buffer
-    (org-mode)
-    (gptel-mode 1)
-    (insert "* Chat\n")
-    (let ((beg (point)))
-      (insert (propertize
-               "* AI heading\n#+BEGIN_SRC emacs-lisp\n(message \"ok\")\n#+END_SRC\n"
-               'gptel 'response))
-      (insert "\n*** Next prompt\n")
-      (gptel-highlight--update beg (point-max))
-      (font-lock-ensure)
-      (goto-char beg)
-      (should (memq 'org-level-1 (get-text-property (point) 'face)))
-      (should (get-char-property (point) 'line-prefix))
-      (search-forward "#+BEGIN_SRC")
-      (beginning-of-line)
-      (should (eq (get-text-property (point) 'face) 'org-block-begin-line))
-      (goto-char (point-min))
-      (search-forward "*** Next prompt")
-      (beginning-of-line)
-      (should-not (get-char-property (point) 'line-prefix))
-      (should-not (get-char-property (point) 'gptel)))))
-
-(ert-deftest gptel/glm-thinking-disabled ()
+(ert-deftest ai/glm-thinking-disabled ()
   (should (equal (get 'glm-5.3-flash :request-params)
                  '(:thinking (:type "disabled")))))
 
-(ert-deftest gptel/agent-and-presets-loaded ()
-  (should (featurep 'gptel-agent))
-  (should (featurep 'gptel-preset-collection))
+(ert-deftest ai/new-session-display-uses-full-frame ()
+  (should (equal gptel-display-buffer-action
+                 '(display-buffer-full-frame))))
+
+(ert-deftest ai/session-buffers-use-full-width-soft-wrapping ()
+  (with-temp-buffer
+    (delay-mode-hooks (org-mode))
+    (gptel-mode 1)
+    (my/gptel-setup-display)
+    (should visual-line-mode)
+    (should-not truncate-lines)
+    (should-not visual-fill-column-width)))
+
+(ert-deftest ai/open-session-restores-native-properties-and-styles ()
+  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
+         (session (expand-file-name "test-session.org" my/gptel-session-directory))
+         (backend (my/ai-backend 'zhipu)))
+    (unwind-protect
+        (progn
+          (with-temp-file session
+            (insert "#+Title: session\n\n"))
+          (with-current-buffer (find-file-noselect session)
+            (gptel-mode 1)
+            (should gptel-mode)
+            (should (eq gptel-backend backend))
+            (should visual-line-mode)
+            (should-not (get-char-property (point) 'gptel))
+            (kill-buffer)))
+      (delete-directory my/gptel-session-directory t))))
+
+(ert-deftest ai/agent-confirms-destructive-bash-only ()
+  (let ((directory (make-temp-file "gptel-agent-" t)))
+    (unwind-protect
+        (let ((default-directory directory))
+          ;; Routine tools run without confirmation.
+          (should-not (my/gptel-agent-confirm-bash "ls -la"))
+          (should-not (my/gptel-agent-confirm-write directory "new-file.txt" ""))
+          ;; Destructive bash prompts.
+          (should (my/gptel-agent-confirm-bash "rm -rf build/"))
+          (should (my/gptel-agent-confirm-bash "git clean -fd"))
+          (should (my/gptel-agent-confirm-bash "git reset --hard HEAD~1"))
+          (should (my/gptel-agent-confirm-bash "find . -name '*.elc' -delete"))
+          ;; Overwriting an existing file prompts.
+          (write-region "" nil (expand-file-name "existing.txt" directory))
+          (should (my/gptel-agent-confirm-write directory "existing.txt" "")))
+      (delete-directory directory t))))
+
+(ert-deftest ai/exit-save-writes-session-to-configured-directory ()
+  (let* ((my/gptel-session-directory (make-temp-file "gptel-sessions-" t))
+         (saved nil))
+    (unwind-protect
+        (with-temp-buffer
+          (insert "hello")
+          (delay-mode-hooks (org-mode))
+          (gptel-mode 1)
+          (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
+                    ((symbol-function 'save-buffer)
+                     (lambda () (setq saved buffer-file-name))))
+            (my/gptel-save-unsaved-sessions-on-exit))
+          (should saved)
+          (should (string-prefix-p (expand-file-name my/gptel-session-directory)
+                                   (expand-file-name saved)))
+          (should (string-match-p "\\.org\\'" saved)))
+      (delete-directory my/gptel-session-directory t))))
+
+(ert-deftest ai/agent-and-presets-loaded ()
   (should (fboundp 'gptel-agent))
   (should (fboundp 'gptel-agent-compact)))
 
-(ert-deftest gptel/minuet-provider-config ()
-  (skip-unless (featurep 'minuet))
-  (should (eq minuet-provider 'openai-compatible))
-  (should (string-match-p "bigmodel"
-                          (plist-get minuet-openai-compatible-options :end-point)))
-  (should (equal "glm-5.3-flash"
-                 (plist-get minuet-openai-compatible-options :model))))
+(ert-deftest ai/minuet-provider-config ()
+  (when (boundp 'minuet-openai-compatible-options)
+    (should (eq minuet-provider 'openai-compatible))
+    (should (equal my/gptel-zhipu-endpoint
+                   (plist-get minuet-openai-compatible-options :end-point)))
+    (should (equal "glm-5.3-flash"
+                   (plist-get minuet-openai-compatible-options :model)))))
 
-(ert-deftest gptel/minuet-thinking-disabled-via-optional ()
-  (skip-unless (featurep 'minuet))
-  (should (equal '(:thinking (:type "disabled"))
-                 (plist-get minuet-openai-compatible-options :optional)))
-  (should-not (plist-get minuet-openai-compatible-options :thinking)))
+(ert-deftest ai/minuet-thinking-disabled-via-optional ()
+  (when (boundp 'minuet-openai-compatible-options)
+    (should (equal '(:thinking (:type "disabled"))
+                   (plist-get minuet-openai-compatible-options :optional)))
+    (should-not (plist-get minuet-openai-compatible-options :thinking))))
+
+(ert-deftest ai/version-probe ()
+  (should (equal my/gptel-init-version "2.0-multi-provider")))

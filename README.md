@@ -50,7 +50,7 @@ git clone https://github.com/zongwu233/emacs.d.git ~/.emacs.d
 
 Emacs will automatically download and install all packages on first launch. Restart Emacs after installation completes.
 
-AI features use [gptel](https://github.com/karthink/gptel), [gptel-agent](https://github.com/karthink/gptel-agent), and [gptel-preset-collection](https://github.com/karthink/gptel-preset-collection). The default model is Zhipu GLM (`glm-5.3-flash`); set `ZHIPUAI_API_KEY`. On first launch, Emacs installs MELPA packages and clones `gptel-preset-collection` via quelpa.
+AI features use [gptel](https://github.com/karthink/gptel), [gptel-agent](https://github.com/karthink/gptel-agent), and [gptel-preset-collection](https://github.com/karthink/gptel-preset-collection). Providers are declared in `my/ai-providers` (in `init-v2.org`); each entry's host is the `machine` field of `~/.authinfo` — the API base_url host — and the API key comes from that entry's `login`/`password`. Out of the box: Zhipu GLM (default, reads `ZHIPUAI_API_KEY` since it has no authinfo entry), DeepSeek, Gemini, Grok, and three GPT relays through `RELAY.EXAMPLE` / `RELAY.EXAMPLE` / `RELAY.EXAMPLE`, plus a local `localhost:9000` server. `SPC a P` (`my/ai-select-provider`) switches the default provider and model; `SPC a S` (`gptel-menu`) switches per buffer. On first launch, Emacs installs MELPA packages and clones `gptel-preset-collection` via quelpa.
 
 > **Note:** The package archive is configured to use the 163 mirror (`mirrors.163.com/elpa/`). If you're outside China, you can switch to the official MELPA source in `lisp/init-package.el`.
 
@@ -97,6 +97,7 @@ AI features use [gptel](https://github.com/karthink/gptel), [gptel-agent](https:
 | `SPC p` | Project | `f` find-file / `s` switch-project / `g` grep |
 | `SPC s` | Search | `s` consult-line / `f` ripgrep / `i` imenu |
 | `SPC g` | Git | `g` magit-status / `b` blame / `l` log |
+| `SPC a` | AI | `s` gptel chat / `S` gptel-menu / `P` switch provider / `a` gptel-agent / `p` plan / `i` minuet suggestion |
 | `SPC u` | Universal argument | |
 | `,` | Major-mode leader | Mode-specific commands |
 

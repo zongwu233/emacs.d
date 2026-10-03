@@ -50,7 +50,7 @@ git clone https://github.com/zongwu233/emacs.d.git ~/.emacs.d
 
 首次启动时 Emacs 会自动下载并安装所有包。安装完成后重启 Emacs。
 
-AI 功能基于 [gptel](https://github.com/karthink/gptel)、[gptel-agent](https://github.com/karthink/gptel-agent) 和 [gptel-preset-collection](https://github.com/karthink/gptel-preset-collection)。默认模型是智谱 GLM（`glm-5.3-flash`），需设置 `ZHIPUAI_API_KEY`。首次启动会从 MELPA 安装包，并用 quelpa 克隆 `gptel-preset-collection`。
+AI 功能基于 [gptel](https://github.com/karthink/gptel)、[gptel-agent](https://github.com/karthink/gptel-agent) 和 [gptel-preset-collection](https://github.com/karthink/gptel-preset-collection)。Provider 在 `my/ai-providers`（位于 `init-v2.org`）中集中声明：每个条目的 host 即 `~/.authinfo` 里 `machine` 字段（API base_url 的 host），API key 取自该条目的 `login`/`password`。开箱即用：智谱 GLM（默认，无 authinfo 条目，读 `ZHIPUAI_API_KEY`）、DeepSeek、Gemini、Grok，以及经 `RELAY.EXAMPLE` / `RELAY.EXAMPLE` / `RELAY.EXAMPLE` 中转的三类 GPT 服务，另有本地 `localhost:9000` 服务。`SPC a P`（`my/ai-select-provider`）切换默认 provider 和模型；`SPC a S`（`gptel-menu`）按 buffer 切换。首次启动会从 MELPA 安装包，并用 quelpa 克隆 `gptel-preset-collection`。
 
 > **注意**：包源使用的是 163 镜像（`mirrors.163.com/elpa/`），国内用户无需额外配置。如果你在海外，可以在 `lisp/init-package.el` 中改为 MELPA 官方源。
 
