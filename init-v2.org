@@ -2254,13 +2254,26 @@ markdown 文件配置相关
 
 
 *** init-ai-local.el
-AI 模块已剥离为独立仓库 ai-agent-in-emacs（~/project/ai-agent-in-emacs/，gptel + gptel-agent + gptel-preset-collection + minuet）。通用部分（多 provider registry、authinfo 取 key、session 管理、agent 工具确认）在仓库内维护，本文件只保留本地特有内容：仓库 load-path、个人 relay providers（对应 ~/.authinfo 条目，密钥只在 authinfo/环境变量里）、SPC a 菜单。默认 provider 仍是智谱 GLM（仓库默认注册表自带，读 ZHIPUAI_API_KEY）。
+AI 模块已剥离为独立仓库 [[https://github.com/zongwu233/ai-agent-in-emacs][ai-agent-in-emacs]]（gptel + gptel-agent + gptel-preset-collection + minuet），clone 到 `~/.emacs.d/site-lisp/ai-agent-in-emacs/`，缺失时首次加载自动 clone。通用部分（多 provider registry、authinfo 取 key、session 管理、agent 工具确认）在仓库内维护，本文件只保留本地特有内容：仓库 load-path、个人 relay providers（对应 ~/.authinfo 条目，密钥只在 authinfo/环境变量里）、SPC a 菜单。默认 provider 仍是智谱 GLM（仓库默认注册表自带，读 ZHIPUAI_API_KEY）。
 #+BEGIN_SRC emacs-lisp  :tangle ~/.emacs.d/lisp/init-ai-local.el
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 ;;; init-ai-local.el --- glue for the external ai-agent-in-emacs repo -*- lexical-binding: t; -*-
 
-;; 通用实现在 ~/project/ai-agent-in-emacs/init-ai.el，本文件不重复其逻辑。
-(add-to-list 'load-path (expand-file-name "ai-agent-in-emacs" "~/project/"))
+;; 通用实现在 https://github.com/zongwu233/ai-agent-in-emacs 的 init-ai.el，
+;; 本文件不重复其逻辑；仓库 clone 到 site-lisp/ 下，缺失时自动 shallow clone。
+(defconst my/ai-repo-url "https://github.com/zongwu233/ai-agent-in-emacs.git"
+  "GitHub URL of the standalone AI module.")
+(defconst my/ai-repo-dir
+  (expand-file-name "site-lisp/ai-agent-in-emacs" user-emacs-directory)
+  "Local clone of `my/ai-repo-url'.")
+
+(unless (file-directory-p my/ai-repo-dir)
+  (unless (zerop (shell-command
+                  (format "git clone --depth 1 %s %s"
+                          my/ai-repo-url (shell-quote-argument my/ai-repo-dir))))
+    (user-error "init-ai-local: failed to clone %s; clone it into %s manually"
+                my/ai-repo-url my/ai-repo-dir)))
+(add-to-list 'load-path my/ai-repo-dir)
 
 (require 'init-ai)
 

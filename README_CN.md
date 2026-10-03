@@ -50,7 +50,7 @@ git clone https://github.com/zongwu233/emacs.d.git ~/.emacs.d
 
 首次启动时 Emacs 会自动下载并安装所有包。安装完成后重启 Emacs。
 
-AI 功能已剥离为独立仓库 [ai-agent-in-emacs](https://github.com/zongwu233/ai-agent-in-emacs)（gptel + gptel-agent + gptel-preset-collection + minuet），克隆到 `~/project/ai-agent-in-emacs/`，由 `lisp/init-ai-local.el` 加载——该文件只保留本地特有的内容：仓库 load-path、来自 `~/.authinfo` 的个人 relay providers、`SPC a` 菜单。Provider 在 `my/ai-providers` 中集中声明：每个条目的 host 即 `~/.authinfo` 里 `machine` 字段（API base_url 的 host），API key 取自该条目的 `login`/`password`（或 `ZHIPUAI_API_KEY` 之类的环境变量）。模块自带注册表默认只有智谱 GLM（默认 provider，coding-plan endpoint）；个人 relay providers（DeepSeek / Gemini / Grok / GPT / 本地模型）在 `init-ai-local.el` 中追加。`SPC a P`（`my/ai-select-provider`）切换默认 provider 和模型；`SPC a S`（`gptel-menu`）按 buffer 切换。完整 provider 字段说明见该仓库 README。首次启动会从 MELPA 安装包，并用 quelpa 克隆 `gptel-preset-collection`。
+AI 功能已剥离为独立仓库 [ai-agent-in-emacs](https://github.com/zongwu233/ai-agent-in-emacs)（gptel + gptel-agent + gptel-preset-collection + minuet），首次加载时自动 shallow clone 到 `~/.emacs.d/site-lisp/ai-agent-in-emacs/`，由 `lisp/init-ai-local.el` 加载——该文件只保留本地特有的内容：仓库 load-path、来自 `~/.authinfo` 的个人 relay providers、`SPC a` 菜单。Provider 在 `my/ai-providers` 中集中声明：每个条目的 host 即 `~/.authinfo` 里 `machine` 字段（API base_url 的 host），API key 取自该条目的 `login`/`password`（或 `ZHIPUAI_API_KEY` 之类的环境变量）。模块自带注册表默认只有智谱 GLM（默认 provider，coding-plan endpoint）；个人 relay providers（DeepSeek / Gemini / Grok / GPT / 本地模型）在 `init-ai-local.el` 中追加。`SPC a P`（`my/ai-select-provider`）切换默认 provider 和模型；`SPC a S`（`gptel-menu`）按 buffer 切换。完整 provider 字段说明见该仓库 README。首次启动会从 MELPA 安装包，并用 quelpa 克隆 `gptel-preset-collection`。
 
 > **注意**：包源使用的是 163 镜像（`mirrors.163.com/elpa/`），国内用户无需额外配置。如果你在海外，可以在 `lisp/init-package.el` 中改为 MELPA 官方源。
 

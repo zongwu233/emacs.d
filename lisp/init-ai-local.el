@@ -1,8 +1,21 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 ;;; init-ai-local.el --- glue for the external ai-agent-in-emacs repo -*- lexical-binding: t; -*-
 
-;; 通用实现在 ~/project/ai-agent-in-emacs/init-ai.el，本文件不重复其逻辑。
-(add-to-list 'load-path (expand-file-name "ai-agent-in-emacs" "~/project/"))
+;; 通用实现在 https://github.com/zongwu233/ai-agent-in-emacs 的 init-ai.el，
+;; 本文件不重复其逻辑；仓库 clone 到 site-lisp/ 下，缺失时自动 shallow clone。
+(defconst my/ai-repo-url "https://github.com/zongwu233/ai-agent-in-emacs.git"
+  "GitHub URL of the standalone AI module.")
+(defconst my/ai-repo-dir
+  (expand-file-name "site-lisp/ai-agent-in-emacs" user-emacs-directory)
+  "Local clone of `my/ai-repo-url'.")
+
+(unless (file-directory-p my/ai-repo-dir)
+  (unless (zerop (shell-command
+                  (format "git clone --depth 1 %s %s"
+                          my/ai-repo-url (shell-quote-argument my/ai-repo-dir))))
+    (user-error "init-ai-local: failed to clone %s; clone it into %s manually"
+                my/ai-repo-url my/ai-repo-dir)))
+(add-to-list 'load-path my/ai-repo-dir)
 
 (require 'init-ai)
 
